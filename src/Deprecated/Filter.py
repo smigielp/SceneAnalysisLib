@@ -5,7 +5,6 @@ import cv2
 #################################################################################################
 # Class with basic image operations 
 #
-#
 # Overview of functionalities:
 # - opening and saving image file
 # - getting grayscale images from RGB
