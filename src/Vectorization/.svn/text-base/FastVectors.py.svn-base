@@ -1,0 +1,386 @@
+'''
+Created on 2012-10-26
+
+@author: piotrek
+'''
+from Tools import Utils
+from copy import deepcopy
+import Gnuplot
+import math
+
+class FastVectors:
+    
+    def __init__(self, winSize):
+        self.gnuPlots = []
+        self.winSize = winSize
+        self.window = []
+        self.marker = 2
+        radius = int(winSize/2)
+        self.radius = radius
+        self.angleStep = math.pi/8
+        # kat o jaki musi zakrecac lamana zeby oznaczyc naroznik
+        self.cornerAngle = 0.25
+        # odleglosc odcinkow podlegajacych zlaczeniu
+        self.lineCombineDistance = 10.0
+        # konstruowanie 4 krawedzi okna do poszukiwania nastepnego punktu obrysu
+        tmp = range(-radius, radius)
+        for i in tmp:
+            self.window.append([-radius,i])
+        for i in tmp:
+            self.window.append([i,radius])
+        tmp = range(-radius+1, radius+1)
+        tmp.reverse()
+        for i in tmp:
+            self.window.append([radius, i])
+        for i in tmp:
+            self.window.append([i, -radius])
+              
+                  
+    def getBorderPointByContrast(self, x, y):
+        min, max = 255, 0
+        for i in range(0, self.winSize):
+            for j in range(0, self.winSize):
+                val = sum(self.data[x + i, y + j])/3
+                if val > max:
+                    max = val
+                    #maxCoord = [x + i, y + j]
+                if val < min:
+                    min = val
+        if max - min > self.contrastThreshold:
+            return True
+        else:
+            return False
+       
+    # na podstawie maciezy (0, 1) z krawedziami tworzy ciag punktow w ukladzie wspolzednych 
+    def getBorderPointSequence(self, data2D):
+        self.fullPicturePoints = []
+        self.minFrameX = self.radius
+        self.maxFrameX = len(data2D)-self.radius
+        self.minFrameY = self.radius
+        self.maxFrameY = len(data2D[0])-self.radius
+        i = self.radius
+        while i < self.maxFrameX:
+            j = self.radius            
+            while j < self.maxFrameY:
+                if data2D[i][j] == 1: 
+                    # lista przechowujaca punkty rozgalezienia
+                    self.splittingPoints = []
+                    
+                    self.singleObjectPoints = []
+                    self.getSingleObjectPoints(data2D, i, j)
+                    self.fullPicturePoints.append(self.singleObjectPoints)
+                j += 1
+            i += 1
+        return self.fullPicturePoints
+    
+    def getSingleObjectPoints(self, data, i, j): 
+        self.prevPoint = None
+        followingPoints = self.getFollowingPoints(data, i, j)
+        while followingPoints != []:
+            self.splittingPoints.extend(followingPoints[1:])
+            i_1 = followingPoints[0][0]
+            j_1 = followingPoints[0][1]            
+            followingPoints = self.getFollowingPoints(data, i_1, j_1)
+        # oznaczenie konca pojedynczej lamanej
+        self.singleObjectPoints.append([-2, -2])
+        try:
+            # gdy krawedz obiektu rozgalezia sie podazamy za odnoga
+            p = self.splittingPoints[0]
+            self.splittingPoints = self.splittingPoints[1:]
+            self.getSingleObjectPoints(data, p[0], p[1], True)
+        except:
+            pass
+     
+    # Wyznacza kolejne punkty na obrysie krawedzi.
+    # @return: lista punktow na spojnym kawalku krawedzi
+    def getFollowingPoints(self, data, i, j, begin=False):
+        self.singleObjectPoints.append([i, j])
+        followingPoints = []
+        #x = len(self.window)/2
+        x = 0
+        while x < len(self.window)-1:
+            x += 1
+            if data[i + self.window[x][0]][j + self.window[x][1]] == 1:                
+                beg = x
+                while x < len(self.window)-1 and data[i + self.window[x][0]][j + self.window[x][1]] == 1:
+                    x += 1
+                end = x - 1
+                #middle = (beg + end)/2
+                middle = beg
+                i_1 = i + self.window[middle][0]
+                j_1 = j + self.window[middle][1]
+                if i_1 > self.minFrameX and i_1 < self.maxFrameX \
+                    and j_1 > self.minFrameY and j_1 < self.maxFrameY:
+                    followingPoints.append([i_1, j_1])    
+        # wybranie na pierwszy punt tego ktory jest najbardziej na wprost poprzedniego
+        # (unikniecie niepotrzebnych zalaman i przerwan lamanej)
+        if len(followingPoints) > 0:
+            '''
+            if self.prevPoint is not None:
+                straightIdx = 0
+                minAngle = 2
+                for idx in range(len(followingPoints)):
+                    newMinAngle = Utils.getAngle(self.prevPoint, [i, j], followingPoints[idx])
+                    if newMinAngle < minAngle:
+                        straightIdx = idx      
+                tmp = followingPoints[idx]
+                followingPoints[straightIdx] = followingPoints[0]
+                followingPoints[0] = tmp
+            '''   
+            self.prevPoint = [i, j]   
+        # zamalowanie aktualnego kwadratu
+        for x in range(-self.radius, self.radius+1):
+            for y in range(-self.radius, self.radius+1):
+                data[i+x][j+y] = 2
+        return followingPoints
+    
+    # @param objects: lista osobnych lamanych
+    #                 kazda lamana to ciag punktow
+    # @param vectorMode: okresla czy kazdy obiekt na zwracanej liscie jest wyrazony 
+    #                    ciagiem punktow, czy ciagiem wektorow ( np. [a, b, c, d, e] lub [[a,b],[b,c],[c,d],[d,e]] )
+    #                    True - ciag wektorow
+    #                    False - ciag punktow
+    def makeSmooth(self, objects, vectorMode=True):
+        vectors = []
+        self.rawVectors = []
+        # dla kazdej lamanej v
+        for v in objects:
+            if len(v) > 3:
+                vertex = []                    
+                anglePrev2 = anglePrev = angle = 1
+                i = 2
+                vertex.append(v[0])
+                while i < len(v)-1:
+                    if v[i+1] == [-2, -2]:
+                        vertex.append(v[i])
+                        vertex.append([-2, -2])
+                        anglePrev2 = anglePrev = angle = 1
+                        i += 3
+                        if i < len(v)-1:
+                            vertex.append(v[i-1])
+                    else:
+                        anglePrev2 = anglePrev
+                        anglePrev = angle                    
+                        angle = Utils.getAngle(v[i], v[i-1], v[i+1])
+                        if angle > 1.0 + self.cornerAngle or angle < 1.0 - self.cornerAngle:
+                            anglePrev2 = anglePrev = angle = 1      
+                            vertex.append(v[i])                          
+                            vertex.append([-1,-1])
+                            vertex.append(v[i])
+                        elif angle + anglePrev > 2.0 + self.cornerAngle or \
+                           angle + anglePrev < 2.0 - self.cornerAngle:
+                            anglePrev2 = anglePrev = angle = 1      
+                            vertex.append(v[i-1])                          
+                            vertex.append([-1,-1])
+                            vertex.append(v[i])
+                        elif angle + anglePrev + anglePrev2 > 3.0 + self.cornerAngle or \
+                           angle + anglePrev + anglePrev2 < 3.0 - self.cornerAngle:  
+                            anglePrev2 = anglePrev = angle = 1      
+                            vertex.append(v[i-2])                          
+                            vertex.append([-1,-1])
+                            vertex.append(v[i])     
+                        i += 1
+                i = 2  
+                self.rawVectors.append(vertex)    
+                if vectorMode:
+                    vectorList = []
+                    beg = vertex[0]
+                    while i < len(vertex):                                        
+                        if vertex[i] == [-1, -1]:
+                            # jezeli napotkany naroznik jest odosobniony to wyznaczamy jego wlasciwa pozycje
+                            if i < len(vertex)-2 and vertex[i-2] != [-1, -1] and vertex[i+2] != [-1, -1]:
+                                newCorner = Utils.getCrossingPoint(vertex[i-2], vertex[i-1], vertex[i+1], vertex[i+2])                            
+                                vectorList.append([beg, newCorner])
+                                beg = newCorner
+                        elif vertex[i] == [-2, -2]:
+                            vectorList.append([beg, vertex[i-1]])
+                            if i < len(vertex)-1:
+                                beg = vertex[i+1]
+                        i += 1
+                    vectors.append(vectorList)
+                else:
+                    pointList = [vertex[0]]                    
+                    while i < len(vertex):                                        
+                        if vertex[i] == [-1, -1]:
+                            # jezeli napotkany naroznik jest odosobniony to wyznaczamy jego wlasciwa pozycje
+                            if i < len(vertex)-2 and vertex[i-2] != [-1, -1] and vertex[i+2] != [-1, -1]:
+                                newCorner = Utils.getCrossingPoint(vertex[i-2], vertex[i-1], vertex[i+1], vertex[i+2])                            
+                                pointList.append(newCorner)
+                        elif vertex[i] == [-2, -2]:
+                            pointList.append(vertex[i-1])
+                            # jezeli mamy koniec jednej lamanej dodajemy jej punkty jako liste
+                            vectors.append(pointList)
+                            # sprawdzamy czy byla jakas odnoga                            
+                            if i < len(vertex)-1:
+                                beg = vertex[i+1]
+                        i += 1
+        self.finalPoints = vectors  
+        return self.finalPoints
+    
+    
+    def vectorPostProcessing(self, lines, combThreshold=5, angleThreshold=0.1, lenThreshold=5, strThreshold=5):
+        self.combineCloseVectors(lines, combThreshold)
+        self.combineVectorsOnSingleLine(lines, angleThreshold)
+        self.straightenVectors(lines, strThreshold)
+        #self.removeShortVectors(lines, lenThreshold)
+    
+    # V.1. - dla vectorMode = False
+    #      - sprawdza tylko bliskosc zakonczen lamanych (bez punktow posrednich)
+    def combineCloseVectors(self, lines, threshold):
+        i = 0
+        while i < len(lines):
+            line1 = lines[i]
+            j = i+1
+            wasCombined = False
+            while j < len(lines):
+                if lines[j] == []:
+                    continue
+                line2 = lines[j]
+                if Utils.getDistance(line1[0], line2[0]) < threshold:
+                    # doklejenie odwroconej line2 do poczatku line1
+                    middlePoint = Utils.getMiddlePoint(line1[0], line2[0])
+                    line1[0] = middlePoint
+                    line2.reverse()
+                    line1 = line2[:-1] + line1
+                    lines[i] = line1
+                    lines.pop(j)
+                    wasCombined = True
+                elif Utils.getDistance(line1[0], line2[-1]) < threshold:
+                    # doklejenie line2 do poczatku line1
+                    middlePoint = Utils.getMiddlePoint(line1[0], line2[-1])
+                    line1[0] = middlePoint
+                    line1 = line2[:-1] + line1
+                    lines[i] = line1
+                    lines.pop(j)
+                    wasCombined = True
+                elif Utils.getDistance(line1[-1], line2[0]) < threshold:
+                    # doklejenie line2 na koniec line1
+                    middlePoint = Utils.getMiddlePoint(line1[-1], line2[0])
+                    line1[-1] = middlePoint
+                    line1 = line1 + line2[1:]
+                    lines[i] = line1
+                    lines.pop(j)
+                    wasCombined = True
+                elif Utils.getDistance(line1[-1], line2[-1]) < threshold:
+                    # doklejenie odwroconej line2 na koniec line1
+                    middlePoint = Utils.getMiddlePoint(line1[-1], line2[-1])
+                    line1[-1] = middlePoint
+                    line2.reverse()
+                    line1 = line1 + line2[1:]
+                    lines[i] = line1
+                    lines.pop(j)
+                    wasCombined = True
+                j += 1
+            # przejscie do nastepnej linii dopiero gdy nie udalo nam sie nic dopasowac
+            if not wasCombined:
+                i += 1     
+        # domkniecie otwartych lamanych
+        for i in range(len(lines)):
+            if Utils.getDistance(lines[i][0], lines[i][-1]) < threshold:
+                #middlePoint = lines[i][0] 
+                middlePoint = Utils.getMiddlePoint(lines[i][0], lines[i][-1])  
+                lines[i][0] = deepcopy(middlePoint)
+                lines[i][-1] = deepcopy(middlePoint)
+    
+    def removeShortVectors(self, lines, threshold):    
+        for line in lines:
+            if len(line) == 2 and Utils.getDistance(line[0], line[1]) < threshold:
+                lines.remove(line)
+            else:
+                i = 0
+                while i < len(line)-1:
+                    if Utils.getDistance(line[i], line[i+1]) < threshold:
+                        middlePoint = Utils.getMiddlePoint(line[i], line[i+1])
+                        line[i] = middlePoint
+                        line.pop(i+1)
+                    else:
+                        i += 1
+    
+    def combineVectorsOnSingleLine(self, lines, threshold):
+        x = 0
+        while x < len(lines):
+            line = lines[x]
+            if len(line) > 2:
+                i = 0
+                j = 2
+                ptsToRemove = []
+                while j < len(line):
+                    angle1 = Utils.getLineAngle(line[i], line[i+1])
+                    angle2 = Utils.getLineAngle(line[i], line[j])
+                    j += 1
+                    while j < len(line) and abs(angle1 - angle2) < threshold:
+                        ptsToRemove.append(j-2)
+                        angle1 = Utils.getLineAngle(line[i], line[i+1])
+                        angle2 = Utils.getLineAngle(line[i], line[j])                        
+                        j += 1
+                        #print line[i], line[i+1], ' -> ', angle1
+                        #print line[i], line[j], ' -> ', angle2
+                        #print '------'
+                    i = j
+                    j += 2
+                lines[x] = [line[i] for i in range(len(line)) if i not in ptsToRemove]
+                # sprawdzenie czy pierwszy i ostatni wektor leza na linii
+                angle1 = Utils.getLineAngle(lines[x][0], lines[x][1])
+                angle2 = Utils.getLineAngle(lines[x][-2], lines[x][-1])
+                if abs(angle1 - angle2) < threshold:
+                    lines[x].pop()
+                    lines[x][0] = deepcopy(lines[x][-1])
+            x += 1                
+    
+    #=====================================================================
+    # wyrownuje linie odchylonie nieznacznie od pionu i poziomu
+    def straightenVectors(self, lines, threshold):
+        for vertex in lines:
+            for i in range(len(vertex)-1):
+                if abs(vertex[i][0] - vertex[i+1][0]) < threshold:
+                    middleX = (vertex[i][0] + vertex[i+1][0]) / 2.0
+                    vertex[i][0] = vertex[i+1][0] = middleX
+                if abs(vertex[i][1] - vertex[i+1][1]) < threshold:
+                    middleY = (vertex[i][1] + vertex[i+1][1]) / 2.0
+                    vertex[i][1] = vertex[i+1][1] = middleY
+            # wyrownanie zakonczen
+            crossing = Utils.getCrossingPoint(vertex[0], vertex[1], vertex[-1], vertex[-2])
+            vertex[0] = deepcopy(crossing)
+            vertex[-1] = deepcopy(crossing)
+                
+    
+    #==============================================================
+    # przeksztalca ciag punktow w oddzielne wektory
+    def getVectorsFromVertex(self, vertex):
+        vectors = []
+        i = 1
+        while i < len(vertex):
+            vectors.append([vertex[i-1], vertex[i]])
+        return vectors             
+    
+         
+#==================================================================================================== 
+# Drukowanie Gnuplot'owych figur
+               
+    def printMultiPointPicture(self, mapToPrint, domain):
+        gp = Gnuplot.Gnuplot(persist=0)
+        gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
+        gp('set yrange [' + str(domain[1][0] - 1) + ':' + str(domain[1][1] + 1) + ']')
+        
+        plots = []
+        for pointList in mapToPrint:           
+            plots.append(Gnuplot.PlotItems.Data(pointList))
+        gp.plot(*plots)
+        self.gnuPlots.append(gp)   
+        
+    def printVectorPicture(self, mapToPrint, domain):   
+        gp = Gnuplot.Gnuplot(persist=0) 
+                          
+        gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
+        gp('set yrange [' + str(domain[1][0] - 1) + ':' + str(domain[1][1] + 1) + ']')
+        
+        plots = []
+        for key in mapToPrint:            
+            plots.append(Gnuplot.PlotItems.Data(key, with_='lines'))
+        if len(domain) > 2:
+            gp.splot(*plots)
+        else:
+            gp.plot(*plots)   
+        self.gnuPlots.append(gp)
+        
+        

@@ -1,0 +1,24 @@
+
+from Recognition import ShapeRecognition
+from Tools import Utils
+
+
+pat1 = [[6,10],[8,20],[2,10],[4,20]]
+pat2 = [[3,5],[5,10],[7,5],[1,10]]
+pat3 = [[6,20],[8,10],[2,20],[4,10]]
+
+pat4 = [[4,8],[2,6],[0,2],[6,4],[0,6],[6,2]]
+pat5 = [[3,16],[1,12],[7,4],[5,8],[7,12],[5,4]]
+
+#print ShapeRecognition.comparePatterns(pat4, pat5)
+
+#vertex = [[7,3],[8,1],[-1,-1],[7,5],[9,5]]
+
+#i = -1
+#while i < len(vertex)-1:
+#    i += 1
+#    if vertex[i] == [-1, -1]:
+#        print Utils.getCrossingPoint(vertex[i-2], vertex[i-1], vertex[i+1], vertex[1+2])
+
+#print Utils.getAngle2([0,0], [-1,0], [1,0])
+      
