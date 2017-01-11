@@ -27,7 +27,7 @@ def printMultiPointPicture(mapToPrint, domain):
    
         
 def printVectorPicture(mapToPrint, domain):   
-    #gp = Gnuplot.Gnuplot(persist=0) 
+    gp = Gnuplot.Gnuplot(persist=0) 
                       
     gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
     gp('set yrange [' + str(domain[1][0] - 1) + ':' + str(domain[1][1] + 1) + ']')
@@ -45,7 +45,7 @@ def printVectorPicture(mapToPrint, domain):
             
      
 def printArrowPicture(mapToPrint, domain=None):   
-    #gp = Gnuplot.Gnuplot(persist=0) 
+    gp = Gnuplot.Gnuplot(persist=0) 
     
     if domain is not None:                  
         gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
@@ -79,7 +79,7 @@ def printObjectGraph(graph, objectsToMark=None):
     graphToPrint = graph.getGraph()
     domain = graph.getDomain()
     
-    #gp = Gnuplot.Gnuplot(persist=0) 
+    gp = Gnuplot.Gnuplot(persist=0) 
                       
     gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
     gp('set yrange [' + str(domain[1][0] - 1) + ':' + str(domain[1][1] + 1) + ']')
@@ -115,7 +115,7 @@ def printObjectGraph(graph, objectsToMark=None):
 # @graphElement : list of graph nodes to print (with their neighbors)
 #   
 def printObjectGraphElement(graphElement, domain=None, markedObjectsIdx=None):
-    #gp = Gnuplot.Gnuplot(persist=0) 
+    gp = Gnuplot.Gnuplot(persist=0) 
             
     if domain is not None:         
         gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')

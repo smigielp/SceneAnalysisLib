@@ -488,8 +488,8 @@ def getVertexCrossing2(v1, v2, x, y, z, threshold=0):
             for i in range(len(vcutB)):
                 vcutB[i] = [vcutB[i][x], vcutB[i][y]]
             
-            # HACK BEGIN- zorlaczanie bryl polacznonych pojedyncza linia. Mozna by przeniesc do osobnej funkcji
-            # Usprawnienie: recznie usunac nakladajace sie odcinki u dolu i gory. Polaczyc powstale dziury odcinkami
+            #HACK BEGIN- zorlaczanie bryl polacznonych pojedyncza linia. Mozna by przeniesc do osobnej funkcji
+            #Usprawnienie: recznie usunac nakladajace sie odcinki u dolu i gory. Polaczyc powstale dziury odcinkami
             lineA = LineString(vcutA)
             multiA = lineA.intersection(lineA)
             
@@ -511,7 +511,7 @@ def getVertexCrossing2(v1, v2, x, y, z, threshold=0):
                 multiPolB = MultiPolygon([Polygon(elem) for elem in list(mergedB) if len(elem.coords[:]) > 2])
             else:
                 multiPolB = MultiPolygon([Polygon(mergedB)])
-            # HACK END
+            #HACK END
             
             if not multiPolA.is_valid or not multiPolB.is_valid:
                 continue
@@ -530,8 +530,12 @@ def getVertexCrossing2(v1, v2, x, y, z, threshold=0):
                     except:
                         print 'error extracting from GeometryCollections'
                         pass
-            else:
+            #HACK BEGIN
+            elif intersectionPolygon.geom_type != 'Point':
                 rawIntersect = [list(intersectionPolygon.exterior.coords)]
+            else:
+                rawIntersect = []
+            #HACK END
             
             for part in rawIntersect: 
                 intersectPart = []

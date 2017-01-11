@@ -142,7 +142,7 @@ class Vectorizer(object):
         for pointList in objects:
             smoothVectors = self.removeRedundantRDP(pointList, outlierDist)
             print "Dist", Utils.getDistance(smoothVectors[0], smoothVectors[-1])
-            if Utils.getDistance(smoothVectors[0], smoothVectors[-1]) < outlierDist*3:                
+            if Utils.getDistance(smoothVectors[0], smoothVectors[-1]) < outlierDist:                
                 smoothVectors[-1] = deepcopy(smoothVectors[0])
             vectors.append(smoothVectors)
         self.finalPoints = vectors        

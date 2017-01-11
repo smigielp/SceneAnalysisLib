@@ -25,13 +25,12 @@ import cv2
 # 3 - printing bitmap array [1, 0] on standard output
 #
 
-
-
 class ImageProcessor(object):
    
     def __init__(self, paramFile=None, configFileSection=None, inDebugLevel=0):                    
-        self.config = ConfigParser.RawConfigParser()      
-        self.setAlgorithmsParameters(paramFile, configFileSection)
+        self.config = ConfigParser.RawConfigParser()   
+        if configFileSection is not None:   
+            self.setAlgorithmsParameters(paramFile, configFileSection)
         self.debugLevel = inDebugLevel  
         
         self.vectorizer = Vectorizer(debugLevel=self.debugLevel)
@@ -41,7 +40,6 @@ class ImageProcessor(object):
         
     def setAlgorithmsParameters(self, paramFile, configFileSection):
         self.config.read(paramFile)
-        self.filterColor = self.config.get(configFileSection, "filterColor")
         self.erosionRepeat = self.config.getint(configFileSection, "erosionRepeat")
         self.dilatationRepeat = self.config.getint(configFileSection, "dilatationRepeat")
         self.imgResizeScale = self.config.getfloat(configFileSection, "imgResizeScale")        
@@ -58,14 +56,13 @@ class ImageProcessor(object):
         
     #############################################################################################
     # Creates vector representation of distinctive shapes on PILImage picture
-    # 0) applies preprocessing (erosion, dilatation)
-    # 1) applies border algorithm
+    # 1) applies given pre-processing (function image Preprocess should include border extraction)
     # 2) mirrors image vertically
     # 3) creates dense sequence of points on object border
     # 4) removes redundant points from border
     #
-    def getVectorRepresentation(self, inputImage, edgesExposed=False):        
-        self.domain = [[0, inputImage.shape[0]], [0, inputImage.shape[1]]]
+    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img)):        
+        self.domain = [[0, inputImage.shape[1]], [0, inputImage.shape[0]]]
         self.domain3D = [[0, inputImage.shape[0]]] + self.domain       
         
         self.vectorizer.setParameters(self.windowSize)
@@ -73,19 +70,12 @@ class ImageProcessor(object):
         self.vectorizer.domain = self.domain
         self.vectorizer.domain3D = self.domain3D
                 
+        inputImage = imagePreprocess(inputImage)
+        
         # Rotation is necessary as the imageCV object has starting point in lower left corner
         # but the algorithms used later read image from upper left corner row-by-row
-        image = self.filter.rotateImage90Right(inputImage) 
-        
-        if not edgesExposed:
-            # Extracting specified color from image
-            if self.filterColor == 'RED':
-                image = self.filter.extractRedColor(image)
-            elif self.filterColor == 'WHITE':
-                image = self.filter.extractWhiteColor(image, self.luminusThreshold)
-            
-            image = cv2.Canny(image, 80, 200)
-                                              
+        image = self.filter.rotateImage90Right(inputImage)
+                                                      
         # Extract dense point sequence on the objects contours     
         borderPoints = self.vectorizer.getBorderPointSequence(image, Vectorizer.extractBorderedObject)
             
@@ -128,35 +118,7 @@ class ImageProcessor(object):
         shapeStructure = self.mounter.create3DStructure(projectionSet)
         return shapeStructure
         
-        
-    #############################################################################################
-    # Main method constructing 3D model from images
-    # @imageSet: list of pairs - [PILImage image, int direction]   
-    #            where direction is the direction from which the image was taken   
-    def create3DStructureFromPictures(self, imageSet):             
-        projectionList = self.getVectorizedImageSet(imageSet, imageDirections=True)        
-        return self.create3DStructureFromVectors(projectionList)
-        
-        
-    #############################################################################################
-    # Method for vectorization of images given on the list
-    # @imageDirections: defines if images on the list are coupled with directions (for 3D model construction)
-    # @pictureSet:      list of PILIMages objects for vectorization
-    #                   for @imageDirections = True  list is: [[image1, direction1], [image2, direction2], ... ]
-    #                   for @imageDirections = False list is: [image1, image2, image3, ... ]
-    def getVectorizedImageSet(self, pictureSet, imageDirections=False):
-        vectorPictureSet = []
-        if imageDirections:
-            for picture in pictureSet:
-                vectorImage = self.getVectorRepresentation(picture[0])
-                vectorPictureSet.append([vectorImage['vect'], picture[1]])
-        else:
-            for picture in pictureSet:
-                vectorImage = self.getVectorRepresentation(picture)
-                vectorPictureSet.append(vectorImage)
-        return vectorPictureSet
-    
-      
+                    
     #############################################################################################
     # Creates data structures for 3D model construction algorithm
     # Extracts the biggest shape in the given set
@@ -177,8 +139,8 @@ class ImageProcessor(object):
             else:
                 vectorProjectionList.append([shape, features, angle])
         projectionSet = ProjectionSet(topProjection=topShape,
-           topFeatures=topFeatures,
-           wallsProjectionsList=vectorProjectionList
-           )
+                                      topFeatures=topFeatures,
+                                      wallsProjectionsList=vectorProjectionList
+                                      )
         return projectionSet
                  

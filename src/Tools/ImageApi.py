@@ -1,4 +1,3 @@
-
 import Image, ImageTk
 import cv2
 import numpy
@@ -22,7 +21,6 @@ class Filter(object):
     def __init__(self, debugLevel=0):
         self.debugLevel = debugLevel
         pass
-
     
     ###############################################################################################
     # extracting red color from image and writing new image in the input image
@@ -82,11 +80,16 @@ class Filter(object):
         for row in data2D:
             row.reverse()
          
-    
+         
     def rotateImage90Right(self, imagecv):
-        rows, cols = imagecv.shape
-        rotationMatrix = cv2.getRotationMatrix2D((cols/2, rows/2),-90,1)
-        newImagecv = cv2.warpAffine(imagecv, rotationMatrix, (cols, rows))
+        print imagecv.shape
+        (h, w) = imagecv.shape[:2]
+        (cX, cY) = (w // 2, h // 2)
+        rotationMatrix = cv2.getRotationMatrix2D((cX, cY), -90, 1)
+        rotationMatrix[0, 2] += (h / 2) - cX
+        rotationMatrix[1, 2] += (w / 2) - cY
+        newImagecv = cv2.warpAffine(imagecv, rotationMatrix, (h, w))
+        print newImagecv.shape
         return newImagecv
                
     
@@ -128,6 +131,11 @@ class Filter(object):
         return image
 
 
+    #############################################################################################
+    # 1) extracts red color
+    # 2) smoothen image image
+    # 3) applies bordering algorithm
+    #
     def prepareImage(self, image):
         lower1 = numpy.array([0, 0, 30], dtype = "uint8")
         upper1 = numpy.array([10, 10, 255], dtype = "uint8")
@@ -150,7 +158,7 @@ class Filter(object):
         #image = cv2.add(image, mask2)
         
         image = cv2.medianBlur(image, 5)
-        #image = cv2.Canny(image, 80, 200)
+        image = cv2.Canny(image, 80, 200)
         
         return image
         
