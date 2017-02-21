@@ -82,13 +82,16 @@ class QuadcopterApi(object):
     
     
     def changeHeading(self, heading, relative=True):
+
+        targetHeading = heading%360
         if relative:
             is_relative=1 #yaw relative to direction of travel
+            realTargetHeading = (self.quad.heading+heading)%360
         else:
             is_relative=0 #yaw is an absolute angle
-        targetHeading = (self.quad.heading + heading) % 360
+            realTargetHeading = heading%360
         print "current: ", self.quad.heading
-        print "target:  ", targetHeading
+        print "target:  ", realTargetHeading
         msg = self.quad.message_factory.command_long_encode(
             0, 0,    # target system, target component
             mavutil.mavlink.MAV_CMD_CONDITION_YAW, #command
@@ -101,10 +104,12 @@ class QuadcopterApi(object):
         # send command to vehicle
         self.quad.send_mavlink(msg)
         while self.continueAction():
-            print datetime.now(), '- Current heading:  ', self.quad.heading
-            if abs(self.quad.heading - targetHeading) <= 2.0:
+            currentHeading = self.quad.heading
+            print datetime.now(), '- Current heading:  ', currentHeading
+            if abs(currentHeading - realTargetHeading) <= 2.0:
                 print datetime.now(), '- Heading set'
-                break;
+                break
+
             sleep(1)
      
     def changeAlt(self, targetAlt):    
@@ -140,8 +145,39 @@ class QuadcopterApi(object):
             0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
             0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink)
         # send command to vehicle
-        self.quad.send_mavlink(msg)            
-            
+        self.quad.send_mavlink(msg)
+
+    def moveForward(self, distance, maintainHeading=True):
+        """
+        moveForward(self, distance, maintainHeading=True)
+
+        Moves drone by @param distance meters towards direction which it is facing.
+        If @param maintainHeading is true, drone will rotate to original direction if it was changed.
+        """
+        currentHeading = self.quad.heading
+        east=math.sin(math.radians(currentHeading))*distance
+        north=math.cos(math.radians(currentHeading))*distance
+        self.goto(north,east)
+        if maintainHeading:
+            print "Setting original heading..."
+            self.changeHeading(currentHeading,False)
+
+    def moveToLocRelativeHeading(self, forward, right, maintainHeading=True):
+        """
+        moveToLocRelativeHeading(self, forward, right, maintainHeading=True)
+
+        Moves drone to the position located @param forward meters forward and @param right meters to the right.
+        If @param maintainHeading is true, drone will rotate to original direction if it was changed.
+        """
+        heading = self.quad.heading
+        rotateAngle = math.degrees(math.atan2(right,forward))
+        print "Rotating by ",rotateAngle," degrees..."
+        self.changeHeading(rotateAngle)
+        self.moveForward(math.sqrt(forward*forward+right*right),maintainHeading)
+        if maintainHeading:
+            print "Setting original heading..."
+            self.changeHeading(heading,False)
+
             
 def get_location_metres(original_location, dNorth, dEast, dalt):
     """
