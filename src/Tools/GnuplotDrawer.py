@@ -10,20 +10,33 @@ gnuPlots = []
 domain3D = None  
 
 gp = Gnuplot.Gnuplot(persist=0)
-           
+
+def addPoints(graph, points):
+    plots = []
+    for point in points:
+        plots.append(Gnuplot.PlotItems.Data(point))
+    graph.replot(*plots)
+
+def setPoints(graph, points):
+    plots = []
+    for point in points:
+        plots.append(Gnuplot.PlotItems.Data(point))
+    graph.plot(*plots)
+
 def printMultiPointPicture(mapToPrint, domain):
     #gp = Gnuplot.Gnuplot(persist=0)
     gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
     gp('set yrange [' + str(domain[1][0] - 1) + ':' + str(domain[1][1] + 1) + ']')
-    
     plots = []
     for pointList in mapToPrint:  
         plots.append(Gnuplot.PlotItems.Data(pointList))
     if len(domain) > 2:
         gp.splot(*plots)
     else:
-        gp.plot(*plots)  
-    gnuPlots.append(gp)   
+        gp.plot(*plots)
+    gnuPlots.append(gp)
+    '''gp.close()'''
+    return gp
    
         
 def printVectorPicture(mapToPrint, domain):   
