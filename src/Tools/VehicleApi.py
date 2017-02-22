@@ -75,7 +75,7 @@ class QuadcopterApi(object):
         while self.continueAction():
             remainingDistance=get_distance_metres(self.quad.location.global_relative_frame, targetLocation)
             print datetime.now(), '- Distance to target:  ', remainingDistance
-            if remainingDistance<=0.2:
+            if remainingDistance<=0.25:
                 print datetime.now(), '- Reached target'
                 break;
             sleep(1)

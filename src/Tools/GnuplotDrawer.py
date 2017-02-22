@@ -12,21 +12,49 @@ domain3D = None
 gp = Gnuplot.Gnuplot(persist=0)
 
 def addPoints(graph, points):
+    """
+    :param graph:   graph on which arrow will be drawn
+    :param points:  arrays of point to be drawn
+    Adds points to the graph and redraw everything
+    """
     plots = []
     for point in points:
         plots.append(Gnuplot.PlotItems.Data(point))
     graph.replot(*plots)
 
-def setPoints(graph, points):
+def setPoints(graph, points, is2D = False):
+    """
+    :param graph:   graph on which arrow will be drawn
+    :param points:  arrays of point to be drawn
+    :param is2D:    whether graph should be 2d or 3d
+    Draws points on the graph
+    """
     plots = []
-    for point in points:
-        plots.append(Gnuplot.PlotItems.Data(point))
-    graph.plot(*plots)
+    for pointsArray in points:
+        plots.append(Gnuplot.PlotItems.Data(pointsArray))
+    if is2D:
+        graph.plot(*plots)
+    else:
+        graph.splot(*plots)
+
+def setArrow(graph, arrow, id=1):
+    """
+    :param graph:   graph on which arrow will be drawn
+    :param arrow:   array of 2 coordinates (start and end of the arrow)
+    :param id:      identifier (integer) of arrow to be modified/created
+    Draws arrow on graph
+    !! has to be called before plotting !!
+    """
+    graph('set arrow %i from %s,%s,%s to %s,%s,%s' % (id,
+                                                    arrow[0][0], arrow[0][1], arrow[0][2],
+                                                    arrow[1][0], arrow[1][1], arrow[1][2]))
 
 def printMultiPointPicture(mapToPrint, domain):
     #gp = Gnuplot.Gnuplot(persist=0)
     gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
     gp('set yrange [' + str(domain[1][0] - 1) + ':' + str(domain[1][1] + 1) + ']')
+    if len(domain) > 2:
+        gp('set zrange [' + str(domain[2][0] - 1) + ':' + str(domain[2][1] + 1) + ']')
     plots = []
     for pointList in mapToPrint:  
         plots.append(Gnuplot.PlotItems.Data(pointList))
@@ -35,7 +63,6 @@ def printMultiPointPicture(mapToPrint, domain):
     else:
         gp.plot(*plots)
     gnuPlots.append(gp)
-    '''gp.close()'''
     return gp
    
         
