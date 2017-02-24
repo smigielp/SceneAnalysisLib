@@ -27,7 +27,7 @@ def setPoints(graph, points, is2D = False):
     :param graph:   graph on which arrow will be drawn
     :param points:  arrays of point to be drawn
     :param is2D:    whether graph should be 2d or 3d
-    Draws points on the graph
+    Draws points on the graph. This function is plotting the graph.
     """
     plots = []
     for pointsArray in points:
@@ -36,6 +36,7 @@ def setPoints(graph, points, is2D = False):
         graph.plot(*plots)
     else:
         graph.splot(*plots)
+
 
 def setArrow(graph, arrow, id=1):
     """
@@ -48,6 +49,21 @@ def setArrow(graph, arrow, id=1):
     graph('set arrow %i from %s,%s,%s to %s,%s,%s' % (id,
                                                     arrow[0][0], arrow[0][1], arrow[0][2],
                                                     arrow[1][0], arrow[1][1], arrow[1][2]))
+
+
+def setLabel(graph, pos, label, id=1):
+    """
+    :param graph:   graph on which label will be drawn
+    :param pos:     position in 3d space of this label
+    :param label:   string to display
+    :param id:      identifier (integer) of label to be modified/created
+    Draws label on graph
+    !! has to be called before plotting !!
+    """
+    graph('set label %i "%s" at %s,%s,%s' % (id,
+                                             label,
+                                             pos[0], pos[1], pos[2]))
+
 
 def printMultiPointPicture(mapToPrint, domain):
     #gp = Gnuplot.Gnuplot(persist=0)

@@ -28,7 +28,10 @@ def _startTracking(vehicleToTrack):
                 pitch = vehicleToTrack.quad.gimbal.pitch
 
             arrow = _getArrowCoordinates(1, position, vehicleToTrack.quad.heading, pitch)
-            GnuplotDrawer.setArrow(trajectoryGraph, arrow)
+            label = '     [%.1f , %.1f , %.1f]' % (round(position[0],1),round(position[1],1),round(position[2],1))
+
+            GnuplotDrawer.setLabel(trajectoryGraph,arrow[0],label,1)
+            GnuplotDrawer.setArrow(trajectoryGraph,arrow,1)
             GnuplotDrawer.setPoints(trajectoryGraph, points)
         sleep(0.5)
 

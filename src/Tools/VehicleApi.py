@@ -11,6 +11,7 @@ from datetime import datetime
 # mavproxy.py --out 127.0.0.1:14550
 # 
 # dron = connect('127.0.0.1:14550', wait_ready=True)
+from CommandQueue import CommandQueue
 
 FRONT = 1
 DOWN  = 0
@@ -19,6 +20,7 @@ class QuadcopterApi(object):
     
     def __init__(self, connectString='127.0.0.1:14550'):
         self.quad = connect(connectString, wait_ready=True)
+        self.commandQueue = CommandQueue(self)
     
     def continueAction(self):
         return self.quad.mode.name == VehicleMode('GUIDED')
@@ -51,8 +53,10 @@ class QuadcopterApi(object):
                 self.quad.armed = True
                 
     
-    def takeoff(self, targetAlt):
-        self.quad.simple_takeoff(10)
+    def takeoff(self, targetAlt=10):
+        if targetAlt < 8:
+            print "Dangerously low target altitude during takeoff!"
+        self.quad.simple_takeoff(targetAlt)
         while True:
             print datetime.now(), 'Altitude:', self.quad.location.global_relative_frame.alt 
             #Break and return from function just below target altitude.        
@@ -154,9 +158,11 @@ class QuadcopterApi(object):
         Moves drone by @param distance meters towards direction which it is facing.
         If @param maintainHeading is true, drone will rotate to original direction if it was changed.
         """
+        print "moving forward by ", distance
         currentHeading = self.quad.heading
-        east=math.sin(math.radians(currentHeading))*distance
-        north=math.cos(math.radians(currentHeading))*distance
+        vec = translate_vec([0,distance], currentHeading)
+        east = vec[0]
+        north = vec[1]
         self.goto(north,east)
         if maintainHeading:
             print "Setting original heading..."
@@ -169,15 +175,18 @@ class QuadcopterApi(object):
         Moves drone to the position located @param forward meters forward and @param right meters to the right.
         If @param maintainHeading is true, drone will rotate to original direction if it was changed.
         """
+        print "moving by ", forward, ",", right
         heading = self.quad.heading
-        rotateAngle = math.degrees(math.atan2(right,forward))
-        print "Rotating by ",rotateAngle," degrees..."
-        self.changeHeading(rotateAngle)
-        self.moveForward(math.sqrt(forward*forward+right*right),maintainHeading)
+        vec = translate_vec([right,forward], heading)
+        east=vec[0]
+        north=vec[1]
+        self.goto(north,east)
+        #print "Rotating by ",rotateAngle," degrees..."
+        #self.changeHeading(rotateAngle)
+        #self.moveForward(math.sqrt(forward*forward+right*right),maintainHeading)
         if maintainHeading:
             print "Setting original heading..."
             self.changeHeading(heading,False)
-
             
 def get_location_metres(original_location, dNorth, dEast, dalt):
     """
@@ -218,3 +227,14 @@ def get_distance_metres(aLocation1, aLocation2):
     dalt = aLocation2.alt - aLocation1.alt
     dground = math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
     return math.sqrt((dground*dground) + (dalt*dalt))
+
+def translate_vec(vec, angle):
+    forward = vec[1]
+    right = vec[0]
+    distance = math.sqrt(forward*forward+right*right)
+    rotateAngle = math.degrees(math.atan2(right,forward))
+    currentHeading = (angle+rotateAngle) %360
+    east=math.sin(math.radians(currentHeading))*distance
+    north=math.cos(math.radians(currentHeading))*distance
+    return [east, north]
+
