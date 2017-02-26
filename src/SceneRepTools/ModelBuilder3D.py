@@ -34,7 +34,9 @@ class ModelBuilder3D:
         
         print '------------------------'
         print right
+        print top
         GnuplotDrawer.printArrowPicture([top], [[-500, 500], [-500, 500]])
+
         GnuplotDrawer.printArrowPicture([front], [[-500, 500], [-500, 500]])
         GnuplotDrawer.printArrowPicture([right], [[-500, 500], [-500, 500]])
                 

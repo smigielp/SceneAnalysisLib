@@ -26,7 +26,8 @@ def printMultiPointPicture(mapToPrint, domain):
     gnuPlots.append(gp)   
    
         
-def printVectorPicture(mapToPrint, domain):   
+def printVectorPicture(mapToPrint, domain):
+    # type: (object, object) -> object
     gp = Gnuplot.Gnuplot(persist=0) 
                       
     gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')

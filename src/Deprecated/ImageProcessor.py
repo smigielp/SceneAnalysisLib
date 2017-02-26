@@ -61,7 +61,13 @@ class ImageProcessor(object):
     # 3) creates dense sequence of points on object border
     # 4) removes redundant points from border
     #
-    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img)):        
+    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img)):
+        # type: (object, object) -> object
+        # type: (object, object) -> object
+        """
+
+        :rtype: object
+        """
         self.domain = [[0, inputImage.shape[1]], [0, inputImage.shape[0]]]
         self.domain3D = [[0, inputImage.shape[0]]] + self.domain       
         
