@@ -82,6 +82,7 @@ class Visualizer(object):
         glEnd()
 
     def initialize(self):
+        print 'OpenGL Context initialized.\n Version: ',glGetString(GL_VERSION)
 
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
