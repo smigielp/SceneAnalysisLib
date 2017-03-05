@@ -3,6 +3,7 @@ Created on 8 mar 2016
 
 @author: Piter
 '''
+import numpy as np
 from dronekit import *
 from time import sleep
 from datetime import datetime
@@ -18,8 +19,7 @@ from Utils import getCentroid
 FRONT = 1
 DOWN  = 0
 
-class QuadcopterApi(object):    
-    
+class QuadcopterApi(object):
     def __init__(self, connectString='127.0.0.1:14550'):
         self.quad = connect(connectString, wait_ready=True)
         self.commandQueue = CommandQueue(self)
@@ -29,7 +29,34 @@ class QuadcopterApi(object):
      
     def close(self):
         self.quad.close()   
-    
+
+    def getDirectionVector(self):
+        """
+        :return:    normalized vector [east,north,up] of the direction which vehicle is facing
+        """
+        directionLR = self.quad.heading
+        directionUD = 0
+        length = 1
+        east = math.sin(math.radians(directionLR)) * length
+        north = math.cos(math.radians(directionLR)) * length
+        up = -math.sin(math.radians(directionUD)) * length
+        end = np.array([0.0, 0.0, 0.0])
+        end[0] = east
+        end[1] = north
+        end[2] = up
+        return end
+
+    def getPositionVector(self):
+        """
+        :return:    vector [east,north,up] of position in space or None if vehicle isn't in valid position
+        """
+        localFrame = self.quad.location.local_frame
+        if localFrame.east is None or localFrame.north is None or localFrame.down is None:
+            return None
+        position = np.array([localFrame.east, localFrame.north, -localFrame.down])
+
+        return position
+
         
     def getState(self):
         print "  > armed    : ", self.quad.armed
@@ -56,16 +83,21 @@ class QuadcopterApi(object):
                 
     
     def takeoff(self, targetAlt=10):
-        if targetAlt < 8:
+        if targetAlt is None or targetAlt < 0:
+            raise RuntimeError("Invalid target altitude provided")
+        if targetAlt < 3:
+            targetAlt = 3
+        if targetAlt < 5:
             print "Dangerously low target altitude during takeoff!"
-        self.quad.simple_takeoff(targetAlt)
+        self.quad.simple_takeoff(targetAlt-1)
         while True:
             print datetime.now(), 'Altitude:', self.quad.location.global_relative_frame.alt 
             #Break and return from function just below target altitude.        
-            if self.quad.location.global_relative_frame.alt>=targetAlt*0.95: 
+            if self.quad.location.global_relative_frame.alt>=(targetAlt-1)*0.95:
                 print datetime.now(), 'Reached target altitude'
                 break
-            time.sleep(1)           
+            time.sleep(1)
+        self.goto(0,0,1,True)
     
     
     def goto(self, dNorth, dEast, dalt=None, altRelative=False, gdspeed=2.0):
@@ -231,6 +263,11 @@ def get_distance_metres(aLocation1, aLocation2):
     return math.sqrt((dground*dground) + (dalt*dalt))
 
 def translate_vec(vec, angle):
+    """
+    :param vec:
+    :param angle:
+    :return:        vector
+    """
     forward = vec[1]
     right = vec[0]
     distance = math.sqrt(forward*forward+right*right)
