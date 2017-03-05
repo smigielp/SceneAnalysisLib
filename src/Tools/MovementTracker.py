@@ -20,14 +20,16 @@ def _startTracking(vehicleToTrack):
         localFrame = vehicleToTrack.quad.location.local_frame
         if (not localFrame.north is None) and (not localFrame.east is None):
             points = list()
-            position = [localFrame.east, localFrame.north, -localFrame.down]
+
+            position = vehicleToTrack.getPositionVector()
             points.append([position])
 
             pitch = 0
             if not vehicleToTrack.quad.gimbal.pitch is None:
                 pitch = vehicleToTrack.quad.gimbal.pitch
 
-            arrow = _getArrowCoordinates(1, position, vehicleToTrack.quad.heading, pitch)
+            arrowHead = position+vehicleToTrack.getDirectionVector()
+            arrow = [position,arrowHead]
             label = '     [%.1f , %.1f , %.1f]' % (round(position[0],1),round(position[1],1),round(position[2],1))
 
             GnuplotDrawer.setLabel(trajectoryGraph,arrow[0],label,1)
@@ -35,16 +37,6 @@ def _startTracking(vehicleToTrack):
             GnuplotDrawer.setPoints(trajectoryGraph, points)
         sleep(0.5)
 
-def _getArrowCoordinates(length, startPos, directionLR=0, directionUD=0):
-    east = math.sin(math.radians(directionLR)) * length
-    north = math.cos(math.radians(directionLR)) * length
-    up = -math.sin(math.radians(directionUD)) * length
-    end = [0, 0, 0]
-    end[0] = startPos[0]+east
-    end[1] = startPos[1]+north
-    end[2] = startPos[2]+up
-    result = [startPos, end]
-    return result
 
 def start(vehicleToTrack):
     thread = Thread(target=_startTracking, args=(vehicleToTrack,))
