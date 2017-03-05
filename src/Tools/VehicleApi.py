@@ -6,7 +6,6 @@ Created on 8 mar 2016
 from dronekit import *
 from time import sleep
 from datetime import datetime
-from math import sin,cos,fabs,pi
 
 #
 # mavproxy.py --out 127.0.0.1:14550
@@ -152,18 +151,6 @@ class QuadcopterApi(object):
             0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
             0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink)
         # send command to vehicle
-            
-
-    def calcMoveToTargetHorizont(self, vectorObjectSet, targetObjectIdx, altitude, lensAngleV, lensAngleH):
-        #lensAngleV/H in degrees
-        resolutionX=500
-        resolutionY=300
-        targetCoord=getCentroid(vectorObjectSet['vect'][targetObjectIdx])
-        distanceNorth=2*fabs(resolutionY/2-targetCoord[1])*altitude*sin(lensAngleV/2*pi/180)/resolutionY
-        distanceEast = 2 * fabs(resolutionX / 2 - targetCoord[0]) * altitude * sin(lensAngleH/2*pi/180) / resolutionX
-        #changing the values according to quad heading
-        distanceEast,distanceNorth=distanceEast*cos(-self.quad.heading*pi/180)-distanceNorth*sin(-self.quad.heading*pi/180), distanceEast*sin(-self.quad.heading*pi/180)+distanceNorth*cos(-self.quad.heading*pi/180)
-        return [distanceNorth,distanceEast]
 
 
     def moveForward(self, distance, maintainHeading=True):
