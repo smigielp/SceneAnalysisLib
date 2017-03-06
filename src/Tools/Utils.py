@@ -4,7 +4,7 @@ from shapely.geometry import Point, LineString, Polygon, MultiPolygon
 from shapely.ops import linemerge
 from Tools import GnuplotDrawer
 
-
+from math import fabs, sin, cos, pi, tan
 
 #######################################################
 # CONSTANTS
@@ -616,15 +616,14 @@ def rotateGraphElement(iobject, angle):
         nbr[0] = rotateVertexByCenterPoint(nbr[0], [0, 0], angle)
         nbr[1] = rotate2D(nbr[1], [0, 0], angle)
 
-def calcMoveToTargetHorizont(self, vectorObjectSet, targetObjectIdx, altitude, lensAngleV, lensAngleH):
+def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, lensAngleH):
     #lensAngleV/H in degrees
     resolutionX=500
     resolutionY=300
-    targetCoord=getCentroid(vectorObjectSet['vect'][targetObjectIdx])
-    distanceNorth=2*fabs(resolutionY/2-targetCoord[1])*altitude*sin(lensAngleV/2*pi/180)/resolutionY
-    distanceEast = 2 * fabs(resolutionX / 2 - targetCoord[0]) * altitude * sin(lensAngleH/2*pi/180) / resolutionX
+    distanceNorth=2*(resolutionY / 2 - targetCoords[1]) * altitude * tan(lensAngleV/2*pi/180)/resolutionY
+    distanceEast = 2 * (targetCoords[0] - resolutionX / 2) * altitude * tan(lensAngleH/2*pi/180) / resolutionX
     #changing the values according to quad heading
-    distanceEast,distanceNorth=distanceEast*cos(-self.quad.heading*pi/180)-distanceNorth*sin(-self.quad.heading*pi/180), distanceEast*sin(-self.quad.heading*pi/180)+distanceNorth*cos(-self.quad.heading*pi/180)
+    distanceEast,distanceNorth=distanceEast*cos(-quadHeading*pi/180)-distanceNorth*sin(-quadHeading*pi/180), distanceEast*sin(-quadHeading*pi/180)+distanceNorth*cos(-quadHeading*pi/180)
     return [distanceNorth,distanceEast]
 
 
