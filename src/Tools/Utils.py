@@ -626,6 +626,45 @@ def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, le
     distanceEast,distanceNorth=distanceEast*cos(-quadHeading*pi/180)-distanceNorth*sin(-quadHeading*pi/180), distanceEast*sin(-quadHeading*pi/180)+distanceNorth*cos(-quadHeading*pi/180)
     return [distanceNorth,distanceEast]
 
+def calcHeadingChangeForFrontPhoto(vectors):
+    '''
+    Returns heading change (in degrees)
+    '''
+    minArea= float("inf")
+    headingChange = 0
+    number=-1
+    for i, center in enumerate(vectors[:-2]):
+        newVect = [[vectors[j][0] - center[0], vectors[j][1] - center[1]] for j in range(len(vectors) - 2)]
+        if i < len(newVect) - 1:
+            if newVect[i + 1][0]:
+                angle = -math.atan(newVect[i + 1][1] / newVect[i + 1][0])
+            elif newVect[i + 1][1] > 0:
+                angle = -math.pi / 2
+            else:
+                angle = math.pi / 2
+        else:
+            if newVect[0][0]:
+                angle = -math.atan(newVect[0][1] / newVect[0][0])
+            elif newVect[0][1] > 0:
+                angle = -math.pi / 2
+            else:
+                angle = math.pi / 2
+        #print i, ". "
+        #print "\t", angle
+        rotatedVect = [[math.cos(angle) * newVect[j][0] - math.sin(angle) * newVect[j][1],
+                        math.sin(angle) * newVect[j][0] + math.cos(angle) * newVect[j][1]] for j in range(len(newVect))]
+        #print "\t", rotatedVect
+        X = [rotatedVect[k][0] for k in range(len(rotatedVect))]
+        Y = [rotatedVect[k][1] for k in range(len(rotatedVect))]
+        currentArea = (max(X) - min(X)) * (max(Y) - min(Y))
+        #print "\t", currentArea, "!"
+        if currentArea < minArea:
+            minArea = currentArea
+            headingChange = 180 - math.degrees(-angle)
+            number = i
+    print "Chosen edge: ", [vectors[number], vectors[number+1 if number+1<len(vectors) else 0]]
+    return headingChange
+
 
 
 if __name__ == "__main__":
