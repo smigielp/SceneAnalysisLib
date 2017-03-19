@@ -39,7 +39,7 @@ def _startTracking(vehicleToTrack):
 
 
 def start(vehicleToTrack):
-    thread = Thread(target=_startTracking, args=(vehicleToTrack,))
+    thread = Thread(name="MovementTrackerThread",target=_startTracking, args=(vehicleToTrack,))
     thread.start()
     print "tracking started"
 
