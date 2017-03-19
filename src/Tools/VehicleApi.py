@@ -18,10 +18,13 @@ from Utils import getCentroid
 
 FRONT = 1
 DOWN  = 0
+MAX_WAIT_FOR_MODE = 5
 
 class QuadcopterApi(object):
     def __init__(self, connectString='127.0.0.1:14550'):
+        print datetime.now(), '- connecting to vehicle...'
         self.quad = connect(connectString, wait_ready=True)
+        self.getState()
         self.commandQueue = CommandQueue(self)
     
     def continueAction(self):
@@ -67,20 +70,26 @@ class QuadcopterApi(object):
     def setMode(self, modeName):
         self.quad.mode = VehicleMode(modeName)
         print datetime.now(), '- Waiting for', modeName, ' mode...'
+        waiter = 0
         while self.quad.mode != VehicleMode(modeName):
             sleep(1)
+            waiter += 1
+            if waiter == MAX_WAIT_FOR_MODE:
+                print datetime.now(), '- timeout while waiting for ', modeName, ' mode'
+                return
         print datetime.now(), '-', modeName, 'mode set'
         
         
-    def setModeGuided(self):        
-        self.setMode('GUIDED')
+    def arm(self):       
         if(not self.quad.armed):
             self.quad.armed = True
             while(not self.quad.armed):
-                print " Waiting for arming..."
+                print datetime.now(), '- waiting for vehicle to arm...'
                 sleep(1)                           
                 self.quad.armed = True
-                
+        else:
+            print datetime.now(), '- vehicle already armed'
+            
     
     def takeoff(self, targetAlt=10):
         if targetAlt is None or targetAlt < 0:

@@ -270,7 +270,12 @@ def fuzzyCompareObjects(vertex1, vertex2, distThreshold):
         return meanDist
         
 
-
+#########################################################################################
+# Wyszukuje obiekt w grafie. Jezeli podany obiekt zawiera sasiadow
+# sprawdzane jest dopasowanie wraz z sasiadami
+# parametry:
+#    lookupObjectIn - szukany obiekt wraz z ewentualnymi sasiadami
+#    lookupGraphIn  - graf przechowujacy obiekty sceny
 def findPatternInGraph(lookupObjectIn, lookupGraphIn):    
     # lookupObject: 
     # [[object, center], [[neighbour1, center1], [neighbour2, center2]]]
@@ -291,7 +296,7 @@ def findPatternInGraph(lookupObjectIn, lookupGraphIn):
         diffParams = comparePatterns(lookupPattern, graphObjPattern) 
         if diffParams is not None :  
             # znalezione dopasowanie wyszukiwanego elementu     
-            # konstruujemy strukture do przechowywania zmachowanych obiektow
+            # konstruujemy strukture do przechowywania dopasowanych obiektow
             # [ {foundObj, foundObjCenter, indexInGraph}, [
             #
             #         
