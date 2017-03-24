@@ -54,6 +54,7 @@ class KeyboardController(object):
             # window._V = Transformations.lookAtMatrix(xyzFrom=np.array([0.,2.,2.]),xyzAtPosition=np.array([0.,0.,0.]))
             pass
         if (char == 'k'):
+            from ImageApi import imageFromArray
             frame = window.grabFrame()
-            # do other stuff
-            print frame
+            img = imageFromArray(frame,window.getWindowSize(),"RGBA",True)
+            img.show()
