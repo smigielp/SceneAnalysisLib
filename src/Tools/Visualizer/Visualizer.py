@@ -154,7 +154,7 @@ class Visualizer(object):
         self.obj.render = True
 
         self.testobj = ModelObject(obj=loadObjectFromObjFile("example_scene.obj"),modelType="TRIANGLES")
-        self.testobj.color = np.array([0.0, 0.5, 0.05])
+        self.testobj.color = np.array([0.2, 0.5, 0.25])
         self.testobj.render = True
         self.registerModelObject(self.testobj)
 
