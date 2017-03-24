@@ -80,7 +80,7 @@ class QuadcopterApi(object):
         print datetime.now(), '-', modeName, 'mode set'
         
         
-    def arm(self):
+    def arm(self):       
         if(not self.quad.armed):
             self.quad.armed = True
             while(not self.quad.armed):
@@ -89,7 +89,7 @@ class QuadcopterApi(object):
                 self.quad.armed = True
         else:
             print datetime.now(), '- vehicle already armed'
-
+            
     
     def takeoff(self, targetAlt=10):
         if targetAlt is None or targetAlt < 0:

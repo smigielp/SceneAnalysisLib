@@ -698,7 +698,6 @@ def getNumpyArray(list):
 
         return numpy.array(list)
 
-
 if __name__ == "__main__":
     beg = [3, 3]
     end = [3, 6]
