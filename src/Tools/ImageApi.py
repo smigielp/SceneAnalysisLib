@@ -161,7 +161,6 @@ class Filter(object):
         image = cv2.Canny(image, 80, 200)
         
         return image
-        
                 
 ###############################################################################################
 # For use with laptop web camera
@@ -231,4 +230,10 @@ class CameraApi2(object):
             pass
         except:
             print "Error releasing camera object."
-    
+
+
+def imageFromArray(array,size,type="RGB",flip=False):
+    img = Image.fromstring(type, size, array.tostring())
+    if flip:
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+    return img
