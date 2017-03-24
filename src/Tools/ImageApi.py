@@ -161,7 +161,8 @@ class Filter(object):
         image = cv2.Canny(image, 80, 200)
         
         return image
-                
+
+
 ###############################################################################################
 # For use with laptop web camera
 class CameraApi(object):          

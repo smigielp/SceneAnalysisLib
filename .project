@@ -3,6 +3,7 @@
 	<name>SceneAnalysisLib</name>
 	<comment></comment>
 	<projects>
+		<project>SceneAnalysisTests</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

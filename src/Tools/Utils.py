@@ -34,22 +34,22 @@ def getDistance(p1, p2):
     return math.sqrt(sum1)
 
 
-def getPointToVertexDist(point, vertex):
-    vtx = LineString(vertex)
+def getPointToPolygonDist(point, polygon):
+    vtx = LineString(polygon)
     pt = Point(point)
     return pt.distance(vtx)
 
-def getPointToVertexFarDist(point, vertex):
+def getPointToPolygonFarDist(point, polygon):
     dist = 0
-    for pt in vertex:
+    for pt in polygon:
         tmpDist = getDistance(point, pt)
         if tmpDist > dist:
             dist = tmpDist
     return dist
 
 
-def getCentroid(vertex):
-    vtx = LineString(vertex)
+def getCentroid(polygon):
+    vtx = LineString(polygon)
     return vtx.centroid.coords[0]
     
 
@@ -90,12 +90,12 @@ def getMiddlePointByY(p1, p2, y):
     return x
 
 
-def getWeightCenter(vertex):
+def getWeightCenter(polygon):
     sumX = sumY = 0
-    for point in vertex:
+    for point in polygon:
         sumX += point[0]
         sumY += point[1]
-    return [sumX / len(vertex), sumY / len(vertex)]
+    return [sumX / len(polygon), sumY / len(polygon)]
 
 
 ############################################################################################
@@ -109,7 +109,7 @@ def rotate2D(point, center, alpha):
     if len(point0) == 3:
         newPoint.append(point0[2])
     for i in range(len(newPoint)):
-        newPoint[i] += center[i]
+        newPoint[i] = round(newPoint[i] + center[i], 2)
     return newPoint
 
 
@@ -284,21 +284,21 @@ def getCrossingPoint(p1, p2, p3, p4, checkSegmentCrossing=False):
             return [x, y]
 
     
-def getHausdorffDist(vertex1, vertex2):
+def getHausdorffDist(polygon1, polygon2):
     distV1 = 0
-    for corner in vertex1:
+    for corner in polygon1:
         i = 1
         dist = 100000000
-        while(i < len(vertex2)):
-            dist = min(dist, getPointToLineDist(corner, vertex2[i - 1], vertex2[i]))  # czy na pewno ta funkcja
+        while(i < len(polygon2)):
+            dist = min(dist, getPointToLineDist(corner, polygon2[i - 1], polygon2[i]))  # czy na pewno ta funkcja
             i += 1
         distV1 = max(distV1, dist)
     distV2 = 0
-    for corner in vertex2:
+    for corner in polygon2:
         i = 1
         dist = 100000000
-        while(i < len(vertex1)):
-            dist = min(dist, getPointToLineDist(corner, vertex1[i - 1], vertex1[i]))
+        while(i < len(polygon1)):
+            dist = min(dist, getPointToLineDist(corner, polygon1[i - 1], polygon1[i]))
             i += 1
         distV2 = max(distV2, dist)
     return max(distV1, distV2)
@@ -306,49 +306,49 @@ def getHausdorffDist(vertex1, vertex2):
 
 ############################################################################################ 
 # oblicza dlugosc lamanej okreslonej jako ciag punktow
-def getVertexLen(vertex):
+def getPolygonLen(polygon):
     i = 1
     llen = 0
-    while i < len(vertex):
-        llen += getDistance(vertex[i], vertex[i - 1])
+    while i < len(polygon):
+        llen += getDistance(polygon[i], polygon[i - 1])
         i += 1
     return llen
 
 
-def getLongestVertex(multiList):
+def getLongestLine(polygon):
     llen = 0
     idx = 0
-    for i, elist in enumerate(multiList):
-        vlen = getVertexLen(elist)
+    for i, elist in enumerate(polygon):
+        vlen = getPolygonLen(elist)
         if vlen > llen:
             llen = vlen
             idx = i
-    return multiList[idx]
+    return polygon[idx]
 
 
-def isPointInVertex(pt, vertex, x, y): 
+def isPointInPolygon(pt, polygon, x, y):
     pt2D = [pt[x], pt[y]]
     spt = Point(pt2D)
-    vertex2D = [[vpt[x], vpt[y]] for vpt in vertex]
-    spol = Polygon(vertex2D)
+    polygon2D = [[vpt[x], vpt[y]] for vpt in polygon]
+    spol = Polygon(polygon2D)
     return spt.intersects(spol)
 
 
 
-def getMaxPoint(vertex, dim=1):   
-    maxPt = vertex[0]
+def getMaxPoint(polygon, dim=1):
+    maxPt = polygon[0]
     maxVal = 0
-    for pt in vertex:
+    for pt in polygon:
         if pt[dim] > maxVal:
             maxVal = pt[dim]
             maxPt = pt
     return maxPt
 
 
-def getMinPoint(vertex, dim=1):
-    minPt = vertex[0]
+def getMinPoint(polygon, dim=1):
+    minPt = polygon[0]
     minVal = 10000
-    for pt in vertex:
+    for pt in polygon:
         if pt[dim] < minVal:
             minVal = pt[dim]
             minPt = pt
@@ -358,14 +358,14 @@ def getMinPoint(vertex, dim=1):
 ############################################################################################
 # pobiera liste najwyzej polozonych punktow bryly
 # z dokladnoscia do distThreshold    
-def getMaxYPointsIdx(vertex, distThreshold):
+def getMaxYPointsIdx(polygon, distThreshold):
     maxPts = []
     maxPtsIdx = []
     maxVal = 0
-    for pt in vertex:
+    for pt in polygon:
         if pt[1] > maxVal:
             maxVal = pt[1]
-    for i, pt in enumerate(vertex):
+    for i, pt in enumerate(polygon):
         if abs(maxVal - pt[1]) < distThreshold and pt not in maxPts:
             maxPts.append(pt)
             maxPtsIdx.append(i)
@@ -375,14 +375,14 @@ def getMaxYPointsIdx(vertex, distThreshold):
 ############################################################################################
 # pobiera liste najnizej polozonych punktow bryly
 # z dokladnoscia do distThreshold   
-def getMinYPointsIdx(vertex, distThreshold):
+def getMinYPointsIdx(polygon, distThreshold):
     minPts = []
     minPtsIdx = []
     minVal = 10000
-    for pt in vertex:
+    for pt in polygon:
         if pt[1] < minVal:
             minVal = pt[1]
-    for i, pt in enumerate(vertex):
+    for i, pt in enumerate(polygon):
         if abs(minVal - pt[1]) < distThreshold and pt not in minPts:
             minPts.append(pt)
             minPtsIdx.append(i)
@@ -392,14 +392,14 @@ def getMinYPointsIdx(vertex, distThreshold):
 ############################################################################################
 # pobiera liste punktow polozonych najbardziej na prawo
 # z dokladnoscia do distThreshold
-def getMaxXPointsIdx(vertex, distThreshold):
+def getMaxXPointsIdx(polygon, distThreshold):
     maxPts = []
     maxPtsIdx = []
     maxVal = 0
-    for pt in vertex:
+    for pt in polygon:
         if pt[0] > maxVal:
             maxVal = pt[0]
-    for i, pt in enumerate(vertex):
+    for i, pt in enumerate(polygon):
         if abs(maxVal - pt[0]) < distThreshold and pt not in maxPts:
             maxPts.append(pt)
             maxPtsIdx.append(i)
@@ -409,14 +409,14 @@ def getMaxXPointsIdx(vertex, distThreshold):
 ############################################################################################
 # pobiera liste punktow polozonych najbardziej na lewo
 # z dokladnoscia do distThreshold
-def getMinXPointsIdx(vertex, distThreshold):
+def getMinXPointsIdx(polygon, distThreshold):
     minPts = []
     minPtsIdx = []
     minVal = 10000
-    for pt in vertex:
+    for pt in polygon:
         if pt[0] < minVal:
             minVal = pt[0]
-    for i, pt in enumerate(vertex):
+    for i, pt in enumerate(polygon):
         if abs(minVal - pt[0]) < distThreshold and pt not in minPts:
             minPts.append(pt)
             minPtsIdx.append(i)
@@ -426,12 +426,12 @@ def getMinXPointsIdx(vertex, distThreshold):
 ############################################################################################
 # pobiera indeks punktu z listy indexes o najmniejszej
 # wartosci X
-def getMostLeftPoint(vertex, indexes):
+def getMostLeftPoint(polygon, indexes):
     minVal = 100000
     minIdx = 0
     for i in indexes:
-        if vertex[i][0] < minVal:
-            minVal = vertex[i][0]
+        if polygon[i][0] < minVal:
+            minVal = polygon[i][0]
             minIdx = i
     return minIdx
     
@@ -457,16 +457,16 @@ def getMiddlePtCoord(ptA, ptB, coordKnownVal, coordKnown, coordCalc):
 
 ############################################################################################  
 # zwraca srodek ciezkosci zamknietej lamanej
-def getCenterPoint(vertex):
+def getCenterPoint(polygon):
     centerX = 0
     centerY = 0  
-    for pt in vertex:
+    for pt in polygon:
         centerX += pt[0]
         centerY += pt[1]
-    return [centerX / len(vertex), centerY / len(vertex)]
+    return [centerX / len(polygon), centerY / len(polygon)]
     
 
-def getVertexCrossing2(v1, v2, x, y, z, threshold=0):
+def getPolygonCrossing2(v1, v2, x, y, z, threshold=0):
     intersect = []
     
     #walls = v1 + v2
@@ -558,112 +558,131 @@ def getVertexCrossing2(v1, v2, x, y, z, threshold=0):
     return intersect
 
 
-def rotateVertexByCenterPoint(vertex, center, angle):
-    vertexRotated = deepcopy(vertex)
-    for i in range(len(vertexRotated)):
-        vertexRotated[i] = rotate2D(vertexRotated[i], center, angle)
-    return vertexRotated
+def rotatePolygonByCenterPoint(polygon, center, angle):
+    polygonRotated = deepcopy(polygon)
+    for i in range(len(polygonRotated)):
+        polygonRotated[i] = rotate2D(polygonRotated[i], center, angle)
+    return polygonRotated
 
 
-def moveVertex(vertex, moveX, moveY=0, moveZ=0):
-    if len(vertex[0]) > 2:
-        for i in range(len(vertex)):
-            vertex[i][0] += moveX
-            vertex[i][1] += moveY
-            vertex[i][2] += moveZ
+def movePolygon(polygon, moveX, moveY=0, moveZ=0):
+    if len(polygon[0]) > 2:
+        for i in range(len(polygon)):
+            polygon[i][0] += moveX
+            polygon[i][1] += moveY
+            polygon[i][2] += moveZ
     else:
-        for i in range(len(vertex)):
-            vertex[i][0] += moveX
-            vertex[i][1] += moveY        
-    return vertex
+        for i in range(len(polygon)):
+            polygon[i][0] += moveX
+            polygon[i][1] += moveY
+    return polygon
 
 
-def scaleVertex(vertex, scale):
-    for i in range(len(vertex)):
-        vertex[i][0] = vertex[i][0] * scale
-        vertex[i][1] = vertex[i][1] * scale
-    return vertex
+def scalePolygon(polygon, scale):
+    for i in range(len(polygon)):
+        polygon[i][0] = polygon[i][0] * scale
+        polygon[i][1] = polygon[i][1] * scale
+    return polygon
 
 
-#=====================================================================
+########################################################################################
 # [[object, center], [[neighbour1, center1], [neighbour2, center2]]]
 def moveGraphElement(iobject):
     objectCenter = iobject[0][1]
     xMove = -objectCenter[0]
     yMove = -objectCenter[1]
-    moveVertex(iobject[0][0], xMove, yMove)
+    movePolygon(iobject[0][0], xMove, yMove)
     iobject[0][1] = (0, 0)
     for nbr in iobject[1]:
-        moveVertex(nbr[0], xMove, yMove)
+        movePolygon(nbr[0], xMove, yMove)
         nbr[1] = (nbr[1][0] + xMove, nbr[1][1] + yMove)
    
-#=====================================================================
+
+########################################################################################
 # Skaluje element GraphStructure wraz z sasiadami
 # [[object, center], [[neighbour1, center1], [neighbour2, center2]]]
 def scaleGraphElement(iobject, scale):
-    scaleVertex(iobject[0][0], scale)
+    scalePolygon(iobject[0][0], scale)
     for nbr in iobject[1]:
-        scaleVertex(nbr[0], scale)
+        scalePolygon(nbr[0], scale)
         nbr[1] = (nbr[1][0] * scale, nbr[1][1] * scale)
         
 
-#=====================================================================
+########################################################################################
 # Skaluje element GraphStructure wraz z sasiadami
 # [[object, center], [[neighbour1, center1], [neighbour2, center2]]]
 def rotateGraphElement(iobject, angle):
-    iobject[0][0] = rotateVertexByCenterPoint(iobject[0][0], [0, 0], angle)
+    iobject[0][0] = rotatePolygonByCenterPoint(iobject[0][0], [0, 0], angle)
     for nbr in iobject[1]:
-        nbr[0] = rotateVertexByCenterPoint(nbr[0], [0, 0], angle)
+        nbr[0] = rotatePolygonByCenterPoint(nbr[0], [0, 0], angle)
         nbr[1] = rotate2D(nbr[1], [0, 0], angle)
 
 def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, lensAngleH):
     #lensAngleV/H in degrees
-    resolutionX=500
-    resolutionY=300
+    resolutionX=780
+    resolutionY=450
     distanceNorth=2*(resolutionY / 2 - targetCoords[1]) * altitude * tan(lensAngleV/2*pi/180)/resolutionY
     distanceEast = 2 * (targetCoords[0] - resolutionX / 2) * altitude * tan(lensAngleH/2*pi/180) / resolutionX
     #changing the values according to quad heading
     distanceEast,distanceNorth=distanceEast*cos(-quadHeading*pi/180)-distanceNorth*sin(-quadHeading*pi/180), distanceEast*sin(-quadHeading*pi/180)+distanceNorth*cos(-quadHeading*pi/180)
     return [distanceNorth,distanceEast]
 
-def calcHeadingChangeForFrontPhoto(vectors):
+def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
     '''
-    Returns heading change (in degrees)
+    Returns a list: coordinates of point for front photo and heading change (in degrees) - positive value -> turn to the right, negative -> left
     '''
+
+    mapWidth=780
+    mapHeight=450
     minArea= float("inf")
     headingChange = 0
-    number=-1
+    chosenEdge=[]
+    photoPoint=[-1,-1]
+
     for i, center in enumerate(vectors[:-2]):
         newVect = [[vectors[j][0] - center[0], vectors[j][1] - center[1]] for j in range(len(vectors) - 2)]
-        if i < len(newVect) - 1:
-            if newVect[i + 1][0]:
-                angle = -math.atan(newVect[i + 1][1] / newVect[i + 1][0])
-            elif newVect[i + 1][1] > 0:
-                angle = -math.pi / 2
-            else:
-                angle = math.pi / 2
+
+        next = i+1 if i+1<len(newVect) else 0
+        if newVect[next][0]:
+            angle = -math.atan(newVect[next][1] / newVect[next][0])
+        elif newVect[next][1] > 0:
+            angle = -math.pi / 2
         else:
-            if newVect[0][0]:
-                angle = -math.atan(newVect[0][1] / newVect[0][0])
-            elif newVect[0][1] > 0:
-                angle = -math.pi / 2
-            else:
-                angle = math.pi / 2
-        #print i, ". "
-        #print "\t", angle
+            angle = math.pi / 2
+
         rotatedVect = [[math.cos(angle) * newVect[j][0] - math.sin(angle) * newVect[j][1],
                         math.sin(angle) * newVect[j][0] + math.cos(angle) * newVect[j][1]] for j in range(len(newVect))]
-        #print "\t", rotatedVect
+        if rotatedVect[next][0] < 0:
+            rotatedVect=[[-rotatedVect[j][0],-rotatedVect[j][1]] for j in range (len(rotatedVect))]
+            angle-=math.pi
+
         X = [rotatedVect[k][0] for k in range(len(rotatedVect))]
         Y = [rotatedVect[k][1] for k in range(len(rotatedVect))]
         currentArea = (max(X) - min(X)) * (max(Y) - min(Y))
-        #print "\t", currentArea, "!"
         if currentArea < minArea:
-            minArea = currentArea
-            headingChange = 180 - math.degrees(-angle)
-            number = i
-    print "Chosen edge: ", [vectors[number], vectors[number+1 if number+1<len(vectors) else 0]]
-    return headingChange
+
+            point=[(max(X) + min(X))/2, max(Y) + photoDist]
+            point=[point[0] * math.cos(angle) + point[1] * math.sin(angle), point[1] * math.cos(angle) - point[0] * math.sin(angle)]
+            point=[point[0] + center[0], point[1]+ center[1]]
+            collision=False
+            for vert in map:
+                if len(vert) >= 3:
+                    collision = isPointInVertex(point, vert[:-2], 0, 1)
+                    if collision:
+                        break
+
+            if 0<=point[0]<=mapWidth and 0<=point[1]<=mapHeight and not collision:
+                minArea = currentArea
+                headingChange = 180 - math.degrees(-angle)
+                if headingChange>180:
+                    headingChange-=360
+                chosenEdge = [vectors[i],vectors[next]]
+                photoPoint=point
+
+    print "\tChosen edge: ", chosenEdge
+    print "\tHeading change: ", headingChange
+    print "\tPhoto point: ", photoPoint
+    return [photoPoint, headingChange, chosenEdge]
 
 def getNumpyArray(list):
     """
@@ -672,12 +691,13 @@ def getNumpyArray(list):
     This function converts, if needed, container list to numpy.array
     """
     import numpy
-    if isinstance(list,numpy.ndarray):
-        #its array not list so just return it
+    if isinstance(list, numpy.ndarray):
+        # its array not list so just return it
         return list
     else:
-        #convert it and return result
+
         return numpy.array(list)
+
 
 if __name__ == "__main__":
     beg = [3, 3]
@@ -697,5 +717,15 @@ if __name__ == "__main__":
     a4 = [96, 319]
     print getCrossingPoint(a1, a2, a3, a4)
     
-    # print isPointInVertex([2,4.01], [[1,1],[1,4],[4,4],[4,5],[1,5],[1,8],[8,8],[8,1],[1,1]])
-    # print isPointInVertex([6, 2, 0], [[1, 1, 0], [1, 3, 0], [8, 3, 0], [8, 1, 0], [1, 1, 0]])
+    print getCrossingPoint([2, 2], [2, -2], [0, 0], [10000, 0])
+    print getCrossingPoint([-2, 2], [2, 2], [0, 0], [10000, 0])
+
+    print 360 - getLineAngle([0, 0], [2, 2]) * 180
+    print 360 - getLineAngle([0, 0], [2, -2]) * 180
+
+    centroid = [0, 0]
+    realRayAngle = 315.0
+    print rotate2D([10000, 0], centroid, -realRayAngle / 180.0)
+
+    # print isPointInPolygon([2,4.01], [[1,1],[1,4],[4,4],[4,5],[1,5],[1,8],[8,8],[8,1],[1,1]])
+    # print isPointInPolygon([6, 2, 0], [[1, 1, 0], [1, 3, 0], [8, 3, 0], [8, 1, 0], [1, 1, 0]])
