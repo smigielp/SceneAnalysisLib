@@ -12,6 +12,7 @@ import time
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
+from OpenGL.arrays._arrayconstants import GL_UNSIGNED_BYTE
 
 import KeyboardController
 from VehicleApi import QuadcopterApi
@@ -22,6 +23,7 @@ from ctypes import c_float
 from ModelObject import ModelObject
 
 from Transformations import *
+from Parser import loadObjectFromObjFile
 
 OpenGL.FULL_LOGGING = True
 _float = c_float
@@ -86,6 +88,9 @@ class Visualizer(object):
         if shouldInitialize:
             self.initialize()
 
+    def getWindowSize(self):
+        return self.cameraC.width,self.cameraC.height
+
     def obtainModelObject(self, drawType='STATIC', modelType='POINTS'):
         """
         :param drawType:    static/dynamic/stream
@@ -137,8 +142,9 @@ class Visualizer(object):
         self.shader = Shader.loadShader()
         self.uniforms = Shader.createUniformLocations(self.shader)
 
-        self.buftest = ModelObject('STATIC')
+        self.buftest = ModelObject(drawType='STATIC', modelType='LINES')
         self.buftest.data = self.verticies
+        self.buftest.elements = self.edges.flatten()
         self.buftest.render = True
         self.buftest.color = np.array([0.2, 0.3, 0.7])
         self.registerModelObject(self.buftest)
@@ -146,6 +152,11 @@ class Visualizer(object):
         self.obj = self.obtainModelObject()
         self.obj.data = np.array([[0.0, 0.0, 0.0]])
         self.obj.render = True
+
+        self.testobj = ModelObject(obj=loadObjectFromObjFile("example_scene.obj"),modelType="TRIANGLES")
+        self.testobj.color = np.array([0.0, 0.5, 0.05])
+        self.testobj.render = True
+        self.registerModelObject(self.testobj)
 
         glDisable(GL_CULL_FACE)
         print get_debug_output()
@@ -186,13 +197,13 @@ class Visualizer(object):
         Returned image is starting from lower left corner and each pixel is in RGB, float format
         This function is safe only in thread with OpenGL context
         """
-        frame = glReadPixels(0, 0, self.cameraC.width, self.cameraC.height, GL_RGB, GL_FLOAT)
+        frame = glReadPixels(0, 0, self.cameraC.width, self.cameraC.height, format=GL_RGBA,type=GL_UNSIGNED_BYTE, outputType=GL_UNSIGNED_BYTE)
         return frame
 
     def _writeFrame(self):
         if self._waitingOnFrame:
             with self._frameAvailability:
-                self._frame = glReadPixels(0, 0, self.cameraC.width, self.cameraC.height, GL_RGB, GL_FLOAT)
+                self._frame = glReadPixels(0, 0, self.cameraC.width, self.cameraC.height, format=GL_RGBA,type=GL_UNSIGNED_BYTE, outputType=GL_UNSIGNED_BYTE)
                 self._waitingOnFrame = False
                 self._frameAvailability.notify_all()
         pass
@@ -205,7 +216,8 @@ class Visualizer(object):
         glUniformMatrix4fv(self.uniforms[0], 1, GL_FALSE, self.cameraC.P)
         glUniformMatrix4fv(self.uniforms[1], 1, GL_TRUE, self.cameraC.V)
         #  todo: add ambient light and normal light
-        # glUniformMatrix4fv(self.uniforms[2], 1, GL_TRUE, self._M)
+
+        #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
         glPointSize(8.0)
         with self._modelsLock:
@@ -223,7 +235,10 @@ class Visualizer(object):
                         sizeof(_float) * 3,
                         None
                     )
-                    glDrawArrays(model.modelType, 0, model.bufferSize)
+                    if model.gl_shouldUseElem():
+                        glDrawElements(model.modelType, model.bufferSize,GL_UNSIGNED_INT,None)
+                    else:
+                        glDrawArrays(model.modelType, 0, model.bufferSize)
                     glDisableVertexAttribArray(0)
 
         mess = get_debug_output()
@@ -280,7 +295,7 @@ class Visualizer(object):
             self.height = 480
 
             self.P = np.identity(4, float32)
-            self.fieldOfView = 110.0
+            self.fieldOfView = 80.0
             self.aspect = float(self.width) / self.height
             self.zNear = 0.1
             self.zFar = 50
