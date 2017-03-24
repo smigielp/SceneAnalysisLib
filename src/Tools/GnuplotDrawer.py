@@ -204,3 +204,22 @@ def printObjectGraphElement(graphElement, domain=None, markedObjectsIdx=None):
         gp.plot(*plots)   
     gnuPlots.append(gp)
     
+    
+###############################################################################
+# Prints the result of FuzzyShapeRecognition.getObjectBorderSpectrum function
+# The printout is in form of bar chart 
+def printPolygonCentroidSpectrum(spectrumList):
+    # type: (object, object) -> object
+    gp = Gnuplot.Gnuplot(persist=0) 
+   
+    plotData = []
+    for spectrum in spectrumList:            
+        print spectrum
+        plotData.append(spectrum[1][0])
+    gp('set yrange [0:]')
+    gp('set style data histograms')
+    gp('set style fill solid 1.0 border -1')
+    gp('set ylabel "Distance from centroid"')
+    gp('set xlabel "Angle"')
+    gp.plot(Gnuplot.PlotItems.Data(plotData))   
+    gnuPlots.append(gp)

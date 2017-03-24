@@ -1,35 +1,59 @@
-import numpy as np
-from OpenGL.GL import *
-
 import Visualizer
 
-window = None
+assertion = True
+
+
 class KeyboardController(object):
-    def __init__(self,window_):
-        global window
-        if not isinstance(window_, Visualizer.Visualizer):
+    """
+    Controls:
+        Camera:
+            a - move left
+            d - move right
+            w - move forward
+            s - move back
+            q - rotate left
+            e - rotate right
+            r - move up [temporary]
+            f - move down [temporary]
+        p - print basic debug info
+        k - capture current frame and print it
+    """
+    # todo: process special keys
+    # todo: make keys buffered
+    def __init__(self, window_):
+        if assertion and not isinstance(window_, Visualizer.Visualizer):
             raise RuntimeError("Invalid vehicle provided")
-        window = window_
+        self.window = window_
 
-
-    def processKeyboardInput(self,char, x, y):
-        global window
-        if not isinstance(window, Visualizer.Visualizer):
-            raise RuntimeError("Invalid vehicle provided")
+    def processKeyboardInput(self, char, x, y):
+        window = self.window
         speed = 0.1
-        if(char=='a'):
-            glTranslatef(speed,0,0)
-            window.camera[0] += speed
-        if(char=='d'):
-            glTranslatef(-speed,0,0)
-            window.camera[0] -= speed
-        if(char=='w'):
-            glTranslatef(0,0,speed)
-            window.camera[2] += speed
-        if(char=='s'):
-            glTranslatef(0,0,-speed)
-            window.camera[2] -= speed
-        if(char=='p'):
-            print "vehicle: ",window.vehicle.quad.heading,window.vehicle.getPositionVector()
-            print "camera: ", window.camera
+        if (char == 'a'):
+            window.cameraC.moveFRU(r=-speed)
+        if (char == 'd'):
+            window.cameraC.moveFRU(r=speed)
+        if (char == 'q'):
+            window.cameraC.rotate(y=-speed)
+        if (char == 'e'):
+            window.cameraC.rotate(y=speed)
+        if (char == 'w'):
+            window.cameraC.moveFRU(f=speed)
+        if (char == 's'):
+            window.cameraC.moveFRU(f=-speed)
+        if (char == 'r'):
+            window.cameraC.moveFRU(u=speed)
+        if (char == 'f'):
+            window.cameraC.moveFRU(u=-speed)
+        if (char == 'p'):
+            if window.vehicle is not None:
+                print "vehicle: ", window.vehicle.quad.heading, window.vehicle.getPositionVector()
+            print  window.cameraC
             print "drone_in_space: ", window.dronePos
+            #  print window.cameraC.V
+        if (char == 'u'):
+            # window._V = Transformations.lookAtMatrix(xyzFrom=np.array([0.,2.,2.]),xyzAtPosition=np.array([0.,0.,0.]))
+            pass
+        if (char == 'k'):
+            frame = window.grabFrame()
+            # do other stuff
+            print frame
