@@ -618,53 +618,70 @@ def rotateGraphElement(iobject, angle):
 
 def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, lensAngleH):
     #lensAngleV/H in degrees
-    resolutionX=500
-    resolutionY=300
+    resolutionX=780
+    resolutionY=450
     distanceNorth=2*(resolutionY / 2 - targetCoords[1]) * altitude * tan(lensAngleV/2*pi/180)/resolutionY
     distanceEast = 2 * (targetCoords[0] - resolutionX / 2) * altitude * tan(lensAngleH/2*pi/180) / resolutionX
     #changing the values according to quad heading
     distanceEast,distanceNorth=distanceEast*cos(-quadHeading*pi/180)-distanceNorth*sin(-quadHeading*pi/180), distanceEast*sin(-quadHeading*pi/180)+distanceNorth*cos(-quadHeading*pi/180)
     return [distanceNorth,distanceEast]
 
-def calcHeadingChangeForFrontPhoto(vectors):
+def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
     '''
-    Returns heading change (in degrees)
+    Returns a list: coordinates of point for front photo and heading change (in degrees) - positive value -> turn to the right, negative -> left
     '''
+
+    mapWidth=780
+    mapHeight=450
     minArea= float("inf")
     headingChange = 0
-    number=-1
+    chosenEdge=[]
+    photoPoint=[-1,-1]
+
     for i, center in enumerate(vectors[:-2]):
         newVect = [[vectors[j][0] - center[0], vectors[j][1] - center[1]] for j in range(len(vectors) - 2)]
-        if i < len(newVect) - 1:
-            if newVect[i + 1][0]:
-                angle = -math.atan(newVect[i + 1][1] / newVect[i + 1][0])
-            elif newVect[i + 1][1] > 0:
-                angle = -math.pi / 2
-            else:
-                angle = math.pi / 2
+
+        next = i+1 if i+1<len(newVect) else 0
+        if newVect[next][0]:
+            angle = -math.atan(newVect[next][1] / newVect[next][0])
+        elif newVect[next][1] > 0:
+            angle = -math.pi / 2
         else:
-            if newVect[0][0]:
-                angle = -math.atan(newVect[0][1] / newVect[0][0])
-            elif newVect[0][1] > 0:
-                angle = -math.pi / 2
-            else:
-                angle = math.pi / 2
-        #print i, ". "
-        #print "\t", angle
+            angle = math.pi / 2
+
         rotatedVect = [[math.cos(angle) * newVect[j][0] - math.sin(angle) * newVect[j][1],
                         math.sin(angle) * newVect[j][0] + math.cos(angle) * newVect[j][1]] for j in range(len(newVect))]
-        #print "\t", rotatedVect
+        if rotatedVect[next][0] < 0:
+            rotatedVect=[[-rotatedVect[j][0],-rotatedVect[j][1]] for j in range (len(rotatedVect))]
+            angle-=math.pi
+
         X = [rotatedVect[k][0] for k in range(len(rotatedVect))]
         Y = [rotatedVect[k][1] for k in range(len(rotatedVect))]
         currentArea = (max(X) - min(X)) * (max(Y) - min(Y))
-        #print "\t", currentArea, "!"
         if currentArea < minArea:
-            minArea = currentArea
-            headingChange = 180 - math.degrees(-angle)
-            number = i
-    print "Chosen edge: ", [vectors[number], vectors[number+1 if number+1<len(vectors) else 0]]
-    return headingChange
 
+            point=[(max(X) + min(X))/2, max(Y) + photoDist]
+            point=[point[0] * math.cos(angle) + point[1] * math.sin(angle), point[1] * math.cos(angle) - point[0] * math.sin(angle)]
+            point=[point[0] + center[0], point[1]+ center[1]]
+            collision=False
+            for vert in map:
+                if len(vert) >= 3:
+                    collision = isPointInVertex(point, vert[:-2], 0, 1)
+                    if collision:
+                        break
+
+            if 0<=point[0]<=mapWidth and 0<=point[1]<=mapHeight and not collision:
+                minArea = currentArea
+                headingChange = 180 - math.degrees(-angle)
+                if headingChange>180:
+                    headingChange-=360
+                chosenEdge = [vectors[i],vectors[next]]
+                photoPoint=point
+
+    print "\tChosen edge: ", chosenEdge
+    print "\tHeading change: ", headingChange
+    print "\tPhoto point: ", photoPoint
+    return [photoPoint, headingChange, chosenEdge]
 
 
 if __name__ == "__main__":
