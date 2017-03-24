@@ -31,6 +31,7 @@ from OpenGL.arrays import vbo
 # from ctypes import sizeof
 from threading import RLock
 import numpy as np
+from Utils import getNumpyArray
 
 from Parser import Object3d
 from Parser import loadObjectFromObjFile
@@ -161,7 +162,7 @@ class ModelObject(object):
 
     @data.setter
     def data(self, data):
-        # todo: convert to np.array if needed
+        data = getNumpyArray(data)
         with self._lock:
             self._data = data
             self._updateBuffer = True
@@ -175,7 +176,7 @@ class ModelObject(object):
         :param data:             numpy.array
         :param isVerticesArray:  array format, specifies if array contains grouped coordinates which create vertices
         """
-        # todo: convert to np.array if needed
+        data = getNumpyArray(data)
         with self._lock:
             self.data = data
             if data is None:
@@ -189,7 +190,7 @@ class ModelObject(object):
 
     @elements.setter
     def elements(self, elements):
-        # todo: convert to np.array if needed
+        elements = getNumpyArray(elements)
         with self._lock:
             self._elements = elements
             self._updateBuffer = True
@@ -203,7 +204,7 @@ class ModelObject(object):
         :param elements:             numpy.array
         :param isVerticesArray:  array format, specifies if array contains grouped coordinates which create vertices
         """
-        # todo: convert to np.array if needed
+        elements = getNumpyArray(elements)
         with self._lock:
             self.elements = elements
 

@@ -665,7 +665,19 @@ def calcHeadingChangeForFrontPhoto(vectors):
     print "Chosen edge: ", [vectors[number], vectors[number+1 if number+1<len(vectors) else 0]]
     return headingChange
 
-
+def getNumpyArray(list):
+    """
+    :param array:   list
+    :return:        numpy.array
+    This function converts, if needed, container list to numpy.array
+    """
+    import numpy
+    if isinstance(list,numpy.ndarray):
+        #its array not list so just return it
+        return list
+    else:
+        #convert it and return result
+        return numpy.array(list)
 
 if __name__ == "__main__":
     beg = [3, 3]
