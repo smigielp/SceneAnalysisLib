@@ -79,6 +79,7 @@ class Visualizer(object):
         self._waitingOnFrame = False
         self._frameAvailability = Condition()
         self._waitingAmount = 0
+        self._useCameraFromVehicle = False
 
         self.shader = None
         self.uniforms = None
@@ -171,7 +172,7 @@ class Visualizer(object):
     def grabFrame(self):
         """
         :return: array of pixels of current frame
-        Returned image is starting from lower left corner and each pixel is in RGB, float format
+        Returned image is starting from lower left corner and each pixel is in RGBA, byte format
         """
 
         if threading.current_thread().name == OGLThreadContextName:
@@ -194,7 +195,7 @@ class Visualizer(object):
     def grabFrameS(self):
         """
         :return: array of pixels of current frame
-        Returned image is starting from lower left corner and each pixel is in RGB, float format
+        Returned image is starting from lower left corner and each pixel is in RGBA, byte format
         This function is safe only in thread with OpenGL context
         """
         frame = glReadPixels(0, 0, self.cameraC.width, self.cameraC.height, format=GL_RGBA,type=GL_UNSIGNED_BYTE, outputType=GL_UNSIGNED_BYTE)
@@ -273,11 +274,18 @@ class Visualizer(object):
         if self.vehicle is not None:
             position = self.vehicle.getPositionVector()
             if position is not None:
-                if not self.obj.render:
+                if not self.obj.render and not self._useCameraFromVehicle:
                     self.obj.render = True
+
                 self.dronePos = position
                 # self.obj.data = np.array([tENUtoXYZ(position)])
-                self.obj.setPos(tENUtoXYZ(position))
+                self.obj.setPos(tENUtoXYZ(self.dronePos))
+
+                if self._useCameraFromVehicle:
+                    self.cameraC.position = tENUtoXYZ(self.dronePos)
+                    self.obj.render = False
+                    #todo: rotate camera properly
+
         else:
             self.obj.render = False
             # self.setDronePos(np.array([2.0, 2.0, 2.0]))
@@ -445,6 +453,8 @@ class Visualizer(object):
                 % (round(self.position[0], 1), round(self.position[1], 1), round(self.position[2], 1),
                    round(self.angle[0], 1), round(self.angle[1], 1), round(self.angle[2], 1))
             return t
+    def cameraFromVehicle(self,bool):
+        self._useCameraFromVehicle = bool
 
 
 def tENUtoXYZ(vector):
@@ -523,6 +533,7 @@ def get_debug_output():
     return ""
 
 
+
 def createWindow(vehicle):
     """
     :param vehicle: vehicle which will be tracked
@@ -540,6 +551,7 @@ def createWindow(vehicle):
 def _createWindow(vis):
     vis.initialize()
     vis.run()
+
 
 
 if __name__ == '__main__':
