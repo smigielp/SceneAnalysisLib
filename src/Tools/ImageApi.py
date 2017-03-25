@@ -233,8 +233,36 @@ class CameraApi2(object):
             print "Error releasing camera object."
 
 
-def imageFromArray(array,size,type="RGB",flip=False):
+def PILimageFromArray(array,size,type="RGB",flip=False):
+    """
+    :param array:   array to parse
+    :param size:    width and height tuple
+    :param type:    pixels format
+    :param flip:    whether image should be flipped afterwards
+    :return:        PILimage
+    """
     img = Image.fromstring(type, size, array.tostring())
     if flip:
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
     return img
+
+def PILImageToCV(pilImage):
+    """
+    :param pilImage:    PILimage
+    :return:            CVImage
+    """
+    pilImage = pilImage.convert("RGB")
+    open_cv_image = numpy.array(pilImage)
+    open_cv_image = open_cv_image[:, :, ::-1].copy()
+    return open_cv_image
+
+def CVImageFromArray(array,size,type="RGB",flip=False):
+    """
+    :param array:   array to parse
+    :param size:    width and height tuple
+    :param type:    pixels format
+    :param flip:    whether image should be flipped afterwards
+    :return:        CVImage
+    """
+    img = PILimageFromArray(array,size,type,flip)
+    return PILImageToCV(img)
