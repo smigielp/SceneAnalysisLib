@@ -35,8 +35,10 @@ class QuadcopterApi(object):
 
     def getDirectionVector(self):
         """
-        :return:    normalized vector [east,north,up] of the direction which vehicle is facing
+        :return:    normalized vector [east,north,up] of the direction which vehicle is facing or None if doesn't exist
         """
+        if self.quad.heading is None:
+            return None
         directionLR = self.quad.heading
         directionUD = 0
         length = 1
