@@ -33,9 +33,9 @@ class KeyboardController(object):
         if (char == 'd'):
             window.cameraC.moveFRU(r=speed)
         if (char == 'q'):
-            window.cameraC.rotate(y=-speed)
-        if (char == 'e'):
             window.cameraC.rotate(y=speed)
+        if (char == 'e'):
+            window.cameraC.rotate(y=-speed)
         if (char == 'w'):
             window.cameraC.moveFRU(f=speed)
         if (char == 's'):
