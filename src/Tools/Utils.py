@@ -667,7 +667,7 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
             collision=False
             for vert in map:
                 if len(vert) >= 3:
-                    collision = isPointInVertex(point, vert[:-2], 0, 1)
+                    collision = isPointInPolygon(point, vert[:-2], 0, 1)
                     if collision:
                         break
 
