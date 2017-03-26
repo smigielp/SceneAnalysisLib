@@ -146,7 +146,7 @@ class Visualizer(object):
         self.buftest = ModelObject(drawType='STATIC', modelType='LINES')
         self.buftest.data = self.verticies
         self.buftest.elements = self.edges.flatten()
-        self.buftest.render = True
+        self.buftest.render = False
         self.buftest.color = np.array([0.2, 0.3, 0.7])
         self.registerModelObject(self.buftest)
 
@@ -154,10 +154,20 @@ class Visualizer(object):
         self.obj.data = np.array([[0.0, 0.0, 0.0]])
         self.obj.render = True
 
-        self.testobj = ModelObject(obj=loadObjectFromObjFile("example_scene.obj"),modelType="TRIANGLES")
-        self.testobj.color = np.array([0.2, 0.5, 0.25])
-        self.testobj.render = True
-        self.registerModelObject(self.testobj)
+        objects = loadObjectFromObjFile("example_scene.obj",splitObjects=True)
+        for object in objects:
+            object.verify()
+            renObject = ModelObject(obj=object,modelType="TRIANGLES")
+            self.registerModelObject(renObject)
+            renObject.render = True
+            if object.name == "Plane001":
+                renObject.color = np.array([0.2, 0.5, 0.25])
+            else:
+                renObject.color = np.array([0.9, 0.04, 0.05])
+        #self.testobj = ModelObject(obj=objects[0],modelType="TRIANGLES")
+        #self.testobj.color = np.array([0.2, 0.5, 0.25])
+        #self.testobj.render = True
+        #self.registerModelObject(self.testobj)
 
         glDisable(GL_CULL_FACE)
         print get_debug_output()
@@ -245,6 +255,7 @@ class Visualizer(object):
         mess = get_debug_output()
         if len(mess) > 0:
             print mess
+
         if self._waitingOnFrame:
             self._writeFrame()
         glutSwapBuffers()
@@ -273,6 +284,7 @@ class Visualizer(object):
     def updateVehiclePosition(self):
         if self.vehicle is not None:
             position = self.vehicle.getPositionVector()
+            direction = self.vehicle.getDirectionVector()
             if position is not None:
                 if not self.obj.render and not self._useCameraFromVehicle:
                     self.obj.render = True
@@ -284,7 +296,9 @@ class Visualizer(object):
                 if self._useCameraFromVehicle:
                     self.cameraC.position = tENUtoXYZ(self.dronePos)
                     self.obj.render = False
-                    #todo: rotate camera properly
+                    direction = tENUtoXYZ(direction)
+                    direction = directionToAngles(direction)
+                    self.cameraC.lookAtEulerExt(y=direction[1])
 
         else:
             self.obj.render = False
@@ -419,7 +433,7 @@ class Visualizer(object):
         def update(self):
             with self.__lock:
                 if self._doUpdate:
-                    angle = self.angle  # [self.angle[0], self.angle[1]]
+                    angle = -self.angle  # [self.angle[0], self.angle[1]]
                     pos = -self.position
                     if self.isPosENU:
                         pos = tENUtoXYZ(pos)
@@ -428,6 +442,32 @@ class Visualizer(object):
 
         def projectionUpdate(self):
             self.P = projectionMatrix(self.fieldOfView, self.aspect, self.zNear, self.zFar)
+
+        def lookAtEulerExt(self,eulerAngles=None,x=None,y=None,z=None):
+            """
+            :param eulerAngles:  vector containing all
+            :param x:   amount to rotate around x axis
+            :param y:   amount to rotate around y axis
+            :param z:   amount to rotate around z axis
+            This function sets looking direction to above values.
+            If any of values x,y,z and eulerAngles are omitted, others get default value from current angle.
+            Ex:
+                #let's say camera has angle = [45,50,55]
+                #calling:
+                lookAtEulerExt(y=88)
+                #would result in camera angle of [45,88,55]
+            """
+            if eulerAngles is not None:
+                return self.lookAt(eulerAngles=eulerAngles)
+            else:
+                xyz = self._angle
+                if x is not None:
+                    xyz[0] = x
+                if y is not None:
+                    xyz[1] = y
+                if z is not None:
+                    xyz[2] = z
+                return self.lookAt(eulerAngles=xyz)
 
         def lookAt(self, xyzFrom=None, xyzAtPosition=None, xyzAtDirection=None, eulerAngles=None):
             with self.__lock:
