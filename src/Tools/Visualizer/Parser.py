@@ -8,6 +8,7 @@ import numpy as np
 
 class Object3d(object):
     def __init__(self,vertices=None,uvs=None,normals=None,faces=None):
+        self.name = None
         self.vertexArray = vertices
         self.UVCoordinatesArray = uvs
         self.NormalsArray = normals
@@ -26,6 +27,17 @@ class Object3d(object):
             self.elements.append(face[0][2])
         self.elements = np.array(self.elements)
 
+    def verify(self):
+        for ele in self.elements:
+            found = False
+            i=0
+            for ver in self.vertexArray:
+                if(ele==i):
+                    found = True
+                    break
+                i+=1
+            if not found:
+                assert(found)
 
 def loadObjectFromObjFile(path,splitObjects=False):
     objFile = open(path, 'r')
@@ -35,29 +47,48 @@ def loadObjectFromObjFile(path,splitObjects=False):
     UVCoordinatesList = []
     NormalsList = []
     facesList = []
+    currObject = None
+
+    prevVertexCount = 0
+    currVertexCount = 0
+    vertexCount = 0
     for line in objFile:
         split = line.split()
         if not len(split):
             continue
         if split[0] == "g": #model name
             #todo: split if there are multiple objects in file and if necessary
-            if splitObjects and len(facesList)>0:
+            if splitObjects:
                 vertexArray = np.array(VertexList,dtype=np.float32)
                 textureArray = np.array(UVCoordinatesList,dtype=np.float32)
                 normalsArray = np.array(NormalsList,dtype=np.float32)
                 faceArray = np.array(facesList,dtype=np.int32)
-                objectsList.append(Object3d(vertexArray,textureArray,normalsArray,faceArray))
+
+                if currObject is not None:
+                    currObject.facesArray = faceArray
+                    currObject.buildObject()
+                    currObject.verify()
+                    objectsList.append(currObject)
+                    prevVertexCount = prevVertexCount+currVertexCount
+
+                currVertexCount = vertexCount
+                vertexCount = 0
+                currObject = Object3d(vertexArray,textureArray,normalsArray,None)
+
+                if len(split)>1:
+                    currObject.name = split[1]
                 VertexList = []
                 UVCoordinatesList = []
                 NormalsList = []
                 facesList = []
-        elif split[0] == "s": #smoothgroup
+        elif split[0] == "s":   # smoothgroup
             pass
         elif split[0] == "mtllib": #materials lib
             pass
         elif split[0] == "usemtl": #materal use
             pass
         elif split[0] == "v": #vertex
+            vertexCount+=1
             vertex = split[1:]
             npVertex = np.array(vertex,dtype=np.float)
             VertexList.append(npVertex)
@@ -80,7 +111,7 @@ def loadObjectFromObjFile(path,splitObjects=False):
                 removeSlash = split[count].split('/')
                 if removeSlash[0] == "":
                     raise RuntimeError("File is corrupted.")
-                face[0][count-1] = int(removeSlash[0])-1
+                face[0][count-1] = int(removeSlash[0])-1-prevVertexCount
                 if removeSlash[1] == "":
                     face[1][count - 1] = -1
                 else:
@@ -113,7 +144,10 @@ def loadObjectFromObjFile(path,splitObjects=False):
     normalsArray = np.array(NormalsList, dtype=np.float32)
     faceArray = np.array(facesList, dtype=np.int32)
     if splitObjects:
-        objectsList.append(Object3d(vertexArray, textureArray, normalsArray, faceArray))
+        currObject.facesArray = faceArray
+        currObject.buildObject()
+        currObject.verify()
+        objectsList.append(currObject)
     VertexList = []
     UVCoordinatesList = []
     NormalsList = []
@@ -123,5 +157,3 @@ def loadObjectFromObjFile(path,splitObjects=False):
         return objectsList
     return Object3d(vertexArray,textureArray,normalsArray,faceArray)
 
-def _extractObject(vertices,uvs,normals,faces):
-    pass
