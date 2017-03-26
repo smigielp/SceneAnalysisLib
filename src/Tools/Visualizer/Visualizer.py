@@ -408,7 +408,7 @@ class Visualizer(object):
                 angleYZ = self.angle[0]
                 angleXZ = self.angle[1]
                 fruw = np.array([fru[1], fru[2], -fru[0], 1.0])
-                x, y, z, w = rotate(fruw, 0, angleXZ, 0, inv=True)
+                x, y, z, w = rotate(fruw, 0, angleXZ, 0, inv=False)
 
                 self.move(x, y, z)
 
