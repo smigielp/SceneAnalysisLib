@@ -632,6 +632,9 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
     Returns a list: coordinates of point for front photo and heading change (in degrees) - positive value -> turn to the right, negative -> left
     '''
 
+    if len(vectors)<3 or vectors[0]!=vectors[-1]:
+        return
+
     mapWidth=780
     mapHeight=450
     minArea= float("inf")
@@ -639,8 +642,12 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
     chosenEdge=[]
     photoPoint=[-1,-1]
 
-    for i, center in enumerate(vectors[:-2]):
-        newVect = [[vectors[j][0] - center[0], vectors[j][1] - center[1]] for j in range(len(vectors) - 2)]
+    cutVect=list(vectors)
+    while cutVect[-1]==cutVect[0]:
+        cutVect.pop()
+
+    for i, center in enumerate(cutVect):
+        newVect = [[cutVect[j][0] - center[0], cutVect[j][1] - center[1]] for j in range(len(cutVect))]
 
         next = i+1 if i+1<len(newVect) else 0
         if newVect[next][0]:
@@ -666,7 +673,7 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
             point=[point[0] + center[0], point[1]+ center[1]]
             collision=False
             for vert in map:
-                if len(vert) >= 3:
+                if len(vert) >= 3 and vert[0]==vert[-1]:
                     collision = isPointInPolygon(point, vert[:-2], 0, 1)
                     if collision:
                         break
