@@ -457,17 +457,18 @@ class Visualizer(object):
                 lookAtEulerExt(y=88)
                 #would result in camera angle of [45,88,55]
             """
-            if eulerAngles is not None:
-                return self.lookAt(eulerAngles=eulerAngles)
-            else:
-                xyz = self._angle
-                if x is not None:
-                    xyz[0] = x
-                if y is not None:
-                    xyz[1] = y
-                if z is not None:
-                    xyz[2] = z
-                return self.lookAt(eulerAngles=xyz)
+            with self.__lock:
+                if eulerAngles is not None:
+                    return self.lookAt(eulerAngles=eulerAngles)
+                else:
+                    xyz = self._angle
+                    if x is not None:
+                        xyz[0] = x
+                    if y is not None:
+                        xyz[1] = y
+                    if z is not None:
+                        xyz[2] = z
+                    return self.lookAt(eulerAngles=xyz)
 
         def lookAt(self, xyzFrom=None, xyzAtPosition=None, xyzAtDirection=None, eulerAngles=None):
             with self.__lock:
@@ -495,6 +496,8 @@ class Visualizer(object):
             return t
     def cameraFromVehicle(self,bool):
         self._useCameraFromVehicle = bool
+    def isCameraFromVehicle(self):
+        return self._useCameraFromVehicle
 
 
 def tENUtoXYZ(vector):
