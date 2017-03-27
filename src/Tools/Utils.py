@@ -617,10 +617,8 @@ def rotateGraphElement(iobject, angle):
         nbr[0] = rotatePolygonByCenterPoint(nbr[0], [0, 0], angle)
         nbr[1] = rotate2D(nbr[1], [0, 0], angle)
 
-def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, lensAngleH):
+def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, lensAngleH,resolutionX=780,resolutionY=450):
     #lensAngleV/H in degrees
-    resolutionX=780
-    resolutionY=450
     distanceNorth=2*(resolutionY / 2 - targetCoords[1]) * altitude * tan(lensAngleV/2*pi/180)/resolutionY
     distanceEast = 2 * (targetCoords[0] - resolutionX / 2) * altitude * tan(lensAngleH/2*pi/180) / resolutionX
     #changing the values according to quad heading

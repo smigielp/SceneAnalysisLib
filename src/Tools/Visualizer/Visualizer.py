@@ -164,6 +164,8 @@ class Visualizer(object):
                 renObject.color = np.array([0.2, 0.5, 0.25])
             else:
                 renObject.color = np.array([0.9, 0.04, 0.05])
+            if not ( object.name == "Plane001" or object.name == "Box004"):
+                renObject.render = False
         #self.testobj = ModelObject(obj=objects[0],modelType="TRIANGLES")
         #self.testobj.color = np.array([0.2, 0.5, 0.25])
         #self.testobj.render = True
@@ -305,9 +307,11 @@ class Visualizer(object):
             # self.setDronePos(np.array([2.0, 2.0, 2.0]))
 
     class Camera(object):
+        #todo: check if camera is really rotated by 180 deg
         def __init__(self):
+            self._defaultAngle = np.array([0., math.radians(180.), 0.]) # in openGL Z axis is "behind" the screen
             self._position = np.array([0., 0., 0.])
-            self._angle = np.array([0., 0., 0.])
+            self._angle = self._defaultAngle+np.array([0., 0., 0.])
             self._doUpdate = True
             self._V = np.identity(4, float32)
             self.isPosENU = False
@@ -485,14 +489,17 @@ class Visualizer(object):
                     xangle, yangle, zangle = eulerAngles
                 else:
                     raise RuntimeError("Invalid arguments.")
-                self.angle = np.array([xangle, yangle, zangle])
+                self.angle = self._defaultAngle+np.array([xangle, yangle, zangle])
 
         def __str__(self):
+            enu = tXYZtoENU(self.position)
             t = """(Camera)
             position: %.1f , %.1f , %.1f
+            position ENU: %.1f , %.1f , %.1f
             angle: %.1f , %.1f , %.1f""" \
                 % (round(self.position[0], 1), round(self.position[1], 1), round(self.position[2], 1),
-                   round(self.angle[0], 1), round(self.angle[1], 1), round(self.angle[2], 1))
+                   round(enu[0], 1), round(enu[1], 1), round(enu[2], 1),
+                   round(math.degrees(self.angle[0]), 1), round(math.degrees(self.angle[1]), 1), round(math.degrees(self.angle[2]), 1))
             return t
     def cameraFromVehicle(self,bool):
         self._useCameraFromVehicle = bool
