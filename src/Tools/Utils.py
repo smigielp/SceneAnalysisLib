@@ -627,13 +627,11 @@ def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, le
     distanceEast,distanceNorth=distanceEast*cos(-quadHeading*pi/180)-distanceNorth*sin(-quadHeading*pi/180), distanceEast*sin(-quadHeading*pi/180)+distanceNorth*cos(-quadHeading*pi/180)
     return [distanceNorth,distanceEast]
 
-def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
+def calcHeadingChangeForFrontPhoto(vectors, map, lensAngleH):
     '''
     Returns a list: coordinates of point for front photo and heading change (in degrees) - positive value -> turn to the right, negative -> left
     '''
 
-    if len(vectors)<3 or vectors[0]!=vectors[-1]:
-        return
 
     mapWidth=780
     mapHeight=450
@@ -641,6 +639,9 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
     headingChange = 0
     chosenEdge=[]
     photoPoint=[-1,-1]
+
+    if len(vectors)<3 or vectors[0]!=vectors[-1]:
+        return [photoPoint, headingChange, chosenEdge]
 
     cutVect=list(vectors)
     while cutVect[-1]==cutVect[0]:
@@ -663,12 +664,22 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
             rotatedVect=[[-rotatedVect[j][0],-rotatedVect[j][1]] for j in range (len(rotatedVect))]
             angle-=math.pi
 
+
         X = [rotatedVect[k][0] for k in range(len(rotatedVect))]
         Y = [rotatedVect[k][1] for k in range(len(rotatedVect))]
         currentArea = (max(X) - min(X)) * (max(Y) - min(Y))
         if currentArea < minArea:
 
-            point=[(max(X) + min(X))/2, max(Y) + photoDist]
+            point=[(max(X) + min(X))/2, (math.fabs((max(X) + min(X))/2) / math.tan(math.radians(lensAngleH/2))) * 1.5]
+            #print "point unturned ", point
+            #print "point ", [point[0] * math.cos(angle) + point[1] * math.sin(angle) + center[0], point[1] * math.cos(angle) - point[0] * math.sin(angle) + center[1]]
+            for apex in rotatedVect:
+                if apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.5 > point [1]:
+                    point[1]= apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.5
+                    #print "point unturned ", point
+                    #print "point ", [point[0] * math.cos(angle) + point[1] * math.sin(angle) + center[0],
+                                     point[1] * math.cos(angle) - point[0] * math.sin(angle) + center[1]]
+
             point=[point[0] * math.cos(angle) + point[1] * math.sin(angle), point[1] * math.cos(angle) - point[0] * math.sin(angle)]
             point=[point[0] + center[0], point[1]+ center[1]]
             collision=False
@@ -689,6 +700,7 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
     print "\tChosen edge: ", chosenEdge
     print "\tHeading change: ", headingChange
     print "\tPhoto point: ", photoPoint
+    print "\n\n\t", angle, "\n\t", rotatedVect
     return [photoPoint, headingChange, chosenEdge]
 
 def getNumpyArray(list):
