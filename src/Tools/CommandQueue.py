@@ -66,7 +66,7 @@ class ManeuverInfo(object):
         """rotate on (north x east plane),(north x up plane),(None)"""
 
     def __init__(self):
-        self.deltaArg = [0, 0, 0]
+        self.deltaArg = [0., 0., 0.]
         self.isAbsolute = [False, False, False]
         self.type = None
 
@@ -108,7 +108,7 @@ class CommandQueue(object):
             raise RuntimeError("Sent new commands while queue is already executing")
         localFrame = self._vehicle.quad.location.local_frame
         self._startpos = [localFrame.east, localFrame.north, -localFrame.down]
-        self._startangle = [self._vehicle.quad.heading, 0, 0]
+        self._startangle = [float(self._vehicle.quad.heading), 0., 0.]
         self._executeQueue()
         return
 
@@ -190,7 +190,7 @@ class CommandQueue(object):
                 if not m.isAbsolute[0]:
                     targetAngle += m.deltaArg
                 else:
-                    targetAngle = m.deltaArg
+                    targetAngle = np.array(m.deltaArg)
             elif t == ManeuverInfo.Type.UNKNOWN:
                 print "Adjustment can not be made"
                 return

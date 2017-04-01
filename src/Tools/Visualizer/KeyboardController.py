@@ -36,6 +36,10 @@ class KeyboardController(object):
             window.cameraC.rotate(y=speed)
         if (char == 'e'):
             window.cameraC.rotate(y=-speed)
+        if (char == 't'):
+            window.cameraC.rotate(x=speed)
+        if (char == 'g'):
+            window.cameraC.rotate(x=-speed)
         if (char == 'w'):
             window.cameraC.moveFRU(f=speed)
         if (char == 's'):
@@ -52,6 +56,7 @@ class KeyboardController(object):
             #  print window.cameraC.V
         if (char == 'u'):
             # window._V = Transformations.lookAtMatrix(xyzFrom=np.array([0.,2.,2.]),xyzAtPosition=np.array([0.,0.,0.]))
+            window.cameraFromVehicle(not window.isCameraFromVehicle())
             pass
         if (char == 'k'):
             from ImageApi import imageFromArray
