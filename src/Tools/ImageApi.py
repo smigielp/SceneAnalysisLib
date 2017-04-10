@@ -15,6 +15,14 @@ from VideoCapture import Device
 #
 
 
+# BGR (Blue, Green, Red)
+COLOR_BOUNDARY = {
+        "RED"        : ([0, 0, 30], [60, 60, 255]),
+        "BLUE"       : ([80, 0, 0], [255, 100, 100]),
+        "YELLOW"     : ([0, 30, 30], [60, 255, 255]),
+        "MAGENTA"    : ([100, 0, 100], [230, 80, 230])
+    }
+
 
 class Filter(object):
 
@@ -132,32 +140,43 @@ class Filter(object):
 
 
     #############################################################################################
-    # 1) extracts red color
+    # 1) extracts given color
     # 2) smoothen image image
     # 3) applies bordering algorithm
     #
-    def prepareImage(self, image):
-        lower1 = numpy.array([0, 0, 30], dtype = "uint8")
-        upper1 = numpy.array([10, 10, 255], dtype = "uint8")
+    def prepareImage(self, inputImage, color):
+        image = cv2.GaussianBlur(inputImage, (5, 5), 0)
+        if color is None:
+            for i, selectedColor in enumerate(COLOR_BOUNDARY.keys()):
+                lower = COLOR_BOUNDARY[selectedColor][0]
+                upper = COLOR_BOUNDARY[selectedColor][1]
+                
+                lower = numpy.array(lower, dtype = "uint8")
+                upper = numpy.array(upper, dtype = "uint8")
+                
+                mask = cv2.inRange(image, lower, upper)
+                tmpImage = cv2.bitwise_and(image, image, mask = mask)
+                if i == 0:
+                    newImage = tmpImage
+                else:
+                    newImage = cv2.add(newImage, tmpImage)
+            image = newImage
+        else:       
+            lower = COLOR_BOUNDARY[color][0]
+            upper = COLOR_BOUNDARY[color][1]
+            
+            lower = numpy.array(lower, dtype = "uint8")
+            upper = numpy.array(upper, dtype = "uint8")
+            
+            #image = cv2.bilateralFilter(image, 11, 90, 90)
+            #image = cv2.medianBlur(image, 5)
+           
+            mask = cv2.inRange(image, lower, upper)
+            image = cv2.bitwise_and(image, image, mask = mask)
+            
+        self.showImage(image)
         
-        lower2 = numpy.array([0, 0, 80], dtype = "uint8")
-        upper2 = numpy.array([50, 50, 255], dtype = "uint8")
-        
-        lower3 = numpy.array([0, 0, 90], dtype = "uint8")
-        upper3 = numpy.array([60, 60, 255], dtype = "uint8")
-        
-        #image = cv2.bilateralFilter(image, 11, 90, 90)
-        #image = cv2.medianBlur(image, 5)
-        image = cv2.GaussianBlur(image, (5, 5), 0)
-       
-        mask1 = cv2.inRange(image, lower1, upper1)
-        #mask2 = cv2.inRange(image, lower2, upper2)
-        mask3 = cv2.inRange(image, lower3, upper3)
-        
-        image = cv2.add(mask1, mask3)
-        #image = cv2.add(image, mask2)
-        
-        image = cv2.medianBlur(image, 5)
+        image = cv2.medianBlur(image, 5)        
         image = cv2.Canny(image, 80, 200)
         
         return image

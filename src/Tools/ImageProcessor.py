@@ -25,6 +25,15 @@ import cv2
 # 3 - printing bitmap array [1, 0] on standard output
 #
 
+
+# Colors used for selective object extraction during vectorization
+RED     = "RED"
+BLUE    = "BLUE"
+YELLOW  = "YELLOW"
+MAGENTA = "MAGENTA"
+
+
+
 class ImageProcessor(object):
    
     def __init__(self, paramFile=None, configFileSection=None, inDebugLevel=0):                    
@@ -42,9 +51,7 @@ class ImageProcessor(object):
         self.config.read(paramFile)
         self.erosionRepeat = self.config.getint(configFileSection, "erosionRepeat")
         self.dilatationRepeat = self.config.getint(configFileSection, "dilatationRepeat")
-        self.imgResizeScale = self.config.getfloat(configFileSection, "imgResizeScale")        
-        # bordering parameters
-        self.luminusThreshold = self.config.getint(configFileSection, "luminusThreshold")  
+        self.imgResizeScale = self.config.getfloat(configFileSection, "imgResizeScale")    
         # vectorization parameters
         self.windowSize = self.config.getint(configFileSection, "windowSize")                 
         self.outlierDistance = self.config.getfloat(configFileSection, "outlierDistance")
@@ -52,16 +59,16 @@ class ImageProcessor(object):
         # vector postprocessing parameters
         self.straightThreshold = self.config.getint(configFileSection, "straightThreshold")
         self.postprocesLevel = self.config.getint(configFileSection, "postprocesLevel")
-        
+     
         
     #############################################################################################
-    # Creates vector representation of distinctive shapes on PILImage picture
+    # Creates vector representation of distinctive shapes on given picture
     # 1) applies given pre-processing (function image Preprocess should include border extraction)
     # 2) mirrors image vertically
     # 3) creates dense sequence of points on object border
     # 4) removes redundant points from border
     #
-    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img)):        
+    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img), color=None):        
         self.domain = [[0, inputImage.shape[1]], [0, inputImage.shape[0]]]
         self.domain3D = [[0, inputImage.shape[0]]] + self.domain       
         
@@ -70,11 +77,11 @@ class ImageProcessor(object):
         self.vectorizer.domain = self.domain
         self.vectorizer.domain3D = self.domain3D
                 
-        inputImage = imagePreprocess(inputImage)
+        image = imagePreprocess(inputImage, color)
         
         # Rotation is necessary as the imageCV object has starting point in lower left corner
         # but the algorithms used later read image from upper left corner row-by-row
-        image = self.filter.rotateImage90Right(inputImage)
+        image = self.filter.rotateImage90Right(image)
                                                       
         # Extract dense point sequence on the objects contours     
         borderPoints = self.vectorizer.getBorderPointSequence(image, Vectorizer.extractBorderedObject)
@@ -95,8 +102,19 @@ class ImageProcessor(object):
 
         if self.debugLevel > 0:
             GnuplotDrawer.printArrowPicture(smoothVectors, self.domain)
-               
-        return {'vect':smoothVectors, 'domain':self.domain}
+                    
+        # Check what precise colors are associated with vectorized objects
+        colorTable = []
+        for object in smoothVectors:
+            point = Utils.getRepresentativePoint(object)
+            if point is not None:
+                pixelColor = [inputImage.item(-round(point[1]), round(point[0]), i) for i in range(3)]
+            else:
+                pixelColor = None
+            colorTable.append(pixelColor)
+                
+        return {'vect':smoothVectors, 'domain':self.domain, 'color':colorTable}
+
 
     
     #############################################################################################

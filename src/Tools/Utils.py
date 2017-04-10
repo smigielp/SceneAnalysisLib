@@ -198,7 +198,6 @@ def getCrossingPoint2(p1, p2, p3, p4):
     line1 = LineString([p1, p2])
     line2 = LineString([p3, p4])
     point = line1.intersection(line2)
-    print point
     return point
 
 ############################################################################################
@@ -332,7 +331,6 @@ def isPointInPolygon(pt, polygon, x, y):
     polygon2D = [[vpt[x], vpt[y]] for vpt in polygon]
     spol = Polygon(polygon2D)
     return spt.intersects(spol)
-
 
 
 def getMaxPoint(polygon, dim=1):
@@ -700,8 +698,19 @@ def getNumpyArray(list):
         # its array not list so just return it
         return list
     else:
-
         return numpy.array(list)
+
+
+def getRepresentativePoint(polygon):
+    try:
+        p = Polygon(polygon)
+        pointInside = p.representative_point()
+        return [pointInside.x, pointInside.y]
+    except:
+        return None
+
+
+
 
 if __name__ == "__main__":
     beg = [3, 3]
