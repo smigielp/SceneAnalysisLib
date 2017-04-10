@@ -617,26 +617,27 @@ def rotateGraphElement(iobject, angle):
 
 def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, lensAngleH,resolutionX=780,resolutionY=450):
     #lensAngleV/H in degrees
-    distanceNorth=2*(resolutionY / 2 - targetCoords[1]) * altitude * tan(lensAngleV/2*pi/180)/resolutionY
-    distanceEast = 2 * (targetCoords[0] - resolutionX / 2) * altitude * tan(lensAngleH/2*pi/180) / resolutionX
+    movementVector=[]
+    movementVector.append(2 * (targetCoords[0] - resolutionX / 2) * altitude * math.tan(math.radians(lensAngleH / 2)) / resolutionX)
+    movementVector.append(2 * (targetCoords[1] - resolutionY / 2) * altitude * math.tan(math.radians(lensAngleV / 2)) / resolutionY)
     #changing the values according to quad heading
-    distanceEast,distanceNorth=distanceEast*cos(-quadHeading*pi/180)-distanceNorth*sin(-quadHeading*pi/180), distanceEast*sin(-quadHeading*pi/180)+distanceNorth*cos(-quadHeading*pi/180)
-    return [distanceNorth,distanceEast]
+    finaleMovementVector = [movementVector[0] * math.cos(-math.radians(quadHeading)) - movementVector[1] * math.sin(-math.radians(quadHeading)),movementVector[0] * math.sin(-math.radians(quadHeading)) + movementVector[1] * math.cos(-math.radians(quadHeading))]
+    return finaleMovementVector
 
-def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
+def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, lensAngleH, lensAngleV, mapWidth=780, mapHeight=450):
     '''
-    Returns a list: coordinates of point for front photo and heading change (in degrees) - positive value -> turn to the right, negative -> left
+    Returns a list: coordinates of points for front and right photo and heading changes for both (in degrees) - positive value -> turn to the right, negative -> left
     '''
 
-    if len(vectors)<3 or vectors[0]!=vectors[-1]:
-        return
+    relativeBuildingHeight = biuldingHeight * mapWidth / (2 * photoAltitude * math.tan(math.radians(lensAngleH)))
 
-    mapWidth=780
-    mapHeight=450
     minArea= float("inf")
     headingChange = 0
     chosenEdge=[]
     photoPoint=[-1,-1]
+
+    if len(vectors)<3 or vectors[0]!=vectors[-1]:
+        return [photoPoint, headingChange, chosenEdge]
 
     cutVect=list(vectors)
     while cutVect[-1]==cutVect[0]:
@@ -658,14 +659,21 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
         if rotatedVect[next][0] < 0:
             rotatedVect=[[-rotatedVect[j][0],-rotatedVect[j][1]] for j in range (len(rotatedVect))]
             angle-=math.pi
+        doubleRotatedVect = [[math.cos(-math.pi / 2) * rotatedVect[j][0] - math.sin(-math.pi / 2) * rotatedVect[j][1], math.sin(-math.pi / 2) * rotatedVect[j][0] + math.cos(-math.pi / 2) * rotatedVect[j][1]] for j in range(len(rotatedVect))]
 
         X = [rotatedVect[k][0] for k in range(len(rotatedVect))]
         Y = [rotatedVect[k][1] for k in range(len(rotatedVect))]
         currentArea = (max(X) - min(X)) * (max(Y) - min(Y))
         if currentArea < minArea:
+            point=[(max(X) + min(X))/2, (math.fabs((max(X) + min(X))/2) / math.tan(math.radians(lensAngleH/2))) * 1.2]
+            for apex in rotatedVect:
+                if apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.2 > point [1]:
+                    point[1]= apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.2
 
-            point=[(max(X) + min(X))/2, max(Y) + photoDist]
-            point=[point[0] * math.cos(angle) + point[1] * math.sin(angle), point[1] * math.cos(angle) - point[0] * math.sin(angle)]
+            if max(Y) + relativeBuildingHeight / 2 /math.tan(math.radians(lensAngleV/2)) * 1.2 > point[1]:
+                point[1] = max(Y) + relativeBuildingHeight / 2 /math.tan(math.radians(lensAngleV/2)) * 1.2
+
+            point=[point[0] * math.cos(-angle) - point[1] * math.sin(-angle), point[1] * math.cos(-angle) + point[0] * math.sin(-angle)]
             point=[point[0] + center[0], point[1]+ center[1]]
             collision=False
             for vert in map:
@@ -674,18 +682,50 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoDist):
                     if collision:
                         break
 
-            if 0<=point[0]<=mapWidth and 0<=point[1]<=mapHeight and not collision:
+            if not collision:
+                x=(max([doubleRotatedVect[k][0] for k in range(len(doubleRotatedVect))]) + min([doubleRotatedVect[k][0] for k in range(len(doubleRotatedVect))]))/2
+                point1=[x,math.fabs(x) / math.tan(math.radians(lensAngleH/2)) * 1.2]
+                #point2=[x, -math.fabs(x) / math.tan(math.radians(lensAngleH/2))) * 1.2]
+                for apex in doubleRotatedVect:
+                    if apex[1] + math.fabs(point1[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2 > point1[1]:
+                        point1[1] = apex[1] + math.fabs(point1[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2
+                    # if apex[1] - math.fabs(point2[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2 < point2[1]:
+                    #     point2[1] = apex[1] - math.fabs(point2[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2
+
+                if max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight / 2 / math.tan(math.radians(lensAngleV / 2)) * 1.2 > point1[1]:
+                    point1[1] = max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight / 2 / math.tan(math.radians(lensAngleV / 2)) * 1.2
+
+                point1 = [point1[0] * math.cos(math.pi / 2 - angle) - point1[1] * math.sin(math.pi / 2 - angle), point1[1] * math.cos(math.pi / 2 - angle) + point1[0] * math.sin(math.pi / 2 - angle)]
+                # point1 = [point1[0] * math.cos(angle) - point1[1] * math.sin(angle),
+                #           point1[1] * math.cos(math.pi / 2) + point1[0] * math.sin(math.pi / 2)]
+                point1 = [point1[0] + center[0], point1[1] + center[1]]
+
+                collision1 = False
+                # collision2 = False
+                for vert in map:
+                    if len(vert) >= 3 and vert[0] == vert[-1]:
+                        collision1 = isPointInPolygon(point1, vert[:-2], 0, 1)
+                        # collision2 = isPointInPolygon(point2, vert[:-2], 0, 1)
+                    if collision1: #and collision2:
+                        break
+
+            if 0<=point[0]<=mapWidth and 0<=point[1]<=mapHeight and not collision and not collision1: #and not (collision1 and collision2):
                 minArea = currentArea
                 headingChange = 180 - math.degrees(-angle)
                 if headingChange>180:
                     headingChange-=360
-                chosenEdge = [vectors[i],vectors[next]]
+                chosenEdge = [cutVect[i],cutVect[next]]
+                secondPhotoPoint= [point1[0] - point[0] + mapWidth/2, point1[1]- point[1] + mapHeight/2]
+                seconHeadingChange=-90
                 photoPoint=point
 
     print "\tChosen edge: ", chosenEdge
     print "\tHeading change: ", headingChange
     print "\tPhoto point: ", photoPoint
-    return [photoPoint, headingChange, chosenEdge]
+    print "\tSecond heading change: ", seconHeadingChange
+    print "\tSecond photo point: ", secondPhotoPoint
+    #GnuplotDrawer.printVectorPicture([doubleRotatedVect], [[0, 781L], [0, 458L]])
+    return [photoPoint, headingChange, secondPhotoPoint, seconHeadingChange, chosenEdge]
 
 def getNumpyArray(list):
     """
