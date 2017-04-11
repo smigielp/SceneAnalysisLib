@@ -17,14 +17,11 @@ class Vectorizer(object):
     
     def __init__(self, cornerAngle=0, windowSize=0, debugLevel=0):
         self.debugLevel = debugLevel
-        # angle between following vertex elements which are treated as corner
-        self.setParameters(windowSize)
-          
+                  
     
     def setParameters(self, windowSize): 
-        self.winSize = windowSize
         self.window = []
-        radius = int(self.winSize / 2)
+        radius = int(windowSize / 2)
         self.radius = radius
         # construction of "window" used for search of following points on the object's contour
         tmp = range(-radius, radius)
@@ -45,7 +42,8 @@ class Vectorizer(object):
     ############################################################################################   
     # based on matrix of [0, 1] values creates lists of points marking the objects' contours
     #
-    def getBorderPointSequence(self, image, borderPointsExtraction):
+    def getBorderPointSequence(self, image, borderPointsExtraction, windowSize):
+        self.setParameters(windowSize)
         self.fullPicturePoints = []
         self.minFrameX = self.radius
         self.maxFrameX = image.shape[0] - self.radius
@@ -141,7 +139,6 @@ class Vectorizer(object):
         vectors = []
         for pointList in objects:
             smoothVectors = self.removeRedundantRDP(pointList, outlierDist)
-            print "Dist", Utils.getDistance(smoothVectors[0], smoothVectors[-1])
             if Utils.getDistance(smoothVectors[0], smoothVectors[-1]) < outlierDist:                
                 smoothVectors[-1] = deepcopy(smoothVectors[0])
             vectors.append(smoothVectors)

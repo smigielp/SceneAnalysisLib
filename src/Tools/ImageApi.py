@@ -144,8 +144,9 @@ class Filter(object):
     # 2) smoothen image image
     # 3) applies bordering algorithm
     #
-    def prepareImage(self, inputImage, color):
-        image = cv2.GaussianBlur(inputImage, (5, 5), 0)
+    def prepareImage(self, inputImage, color):        
+        image = cv2.bilateralFilter(inputImage, 11, 90, 90)
+        # Extracting all colors
         if color is None:
             for i, selectedColor in enumerate(COLOR_BOUNDARY.keys()):
                 lower = COLOR_BOUNDARY[selectedColor][0]
@@ -161,24 +162,32 @@ class Filter(object):
                 else:
                     newImage = cv2.add(newImage, tmpImage)
             image = newImage
-        else:       
+        # Extracting particular color from list
+        elif color in COLOR_BOUNDARY.keys():       
             lower = COLOR_BOUNDARY[color][0]
             upper = COLOR_BOUNDARY[color][1]
             
             lower = numpy.array(lower, dtype = "uint8")
             upper = numpy.array(upper, dtype = "uint8")
             
-            #image = cv2.bilateralFilter(image, 11, 90, 90)
-            #image = cv2.medianBlur(image, 5)
-           
             mask = cv2.inRange(image, lower, upper)
             image = cv2.bitwise_and(image, image, mask = mask)
-            
-        self.showImage(image)
-        
-        image = cv2.medianBlur(image, 5)        
-        image = cv2.Canny(image, 80, 200)
-        
+        # Extracting objects having similar color to given one (in BGR)
+        else:
+            for selectedColor in COLOR_BOUNDARY.keys():
+                lower = COLOR_BOUNDARY[selectedColor][0]
+                upper = COLOR_BOUNDARY[selectedColor][1]
+                if color > lower and color < upper:      
+                    lower = numpy.array(lower, dtype = "uint8")
+                    upper = numpy.array(upper, dtype = "uint8")
+                    
+                    mask = cv2.inRange(image, lower, upper)
+                    image = cv2.bitwise_and(image, image, mask = mask)
+                    break
+                
+        self.showImage(image)        
+        #image = cv2.medianBlur(image, 5)        
+        image = cv2.Canny(image, 80, 200)        
         return image
 
 

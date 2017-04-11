@@ -49,8 +49,6 @@ class ImageProcessor(object):
         
     def setAlgorithmsParameters(self, paramFile, configFileSection):
         self.config.read(paramFile)
-        self.erosionRepeat = self.config.getint(configFileSection, "erosionRepeat")
-        self.dilatationRepeat = self.config.getint(configFileSection, "dilatationRepeat")
         self.imgResizeScale = self.config.getfloat(configFileSection, "imgResizeScale")    
         # vectorization parameters
         self.windowSize = self.config.getint(configFileSection, "windowSize")                 
@@ -72,8 +70,6 @@ class ImageProcessor(object):
         self.domain = [[0, inputImage.shape[1]], [0, inputImage.shape[0]]]
         self.domain3D = [[0, inputImage.shape[0]]] + self.domain       
         
-        self.vectorizer.setParameters(self.windowSize)
-        
         self.vectorizer.domain = self.domain
         self.vectorizer.domain3D = self.domain3D
                 
@@ -84,13 +80,14 @@ class ImageProcessor(object):
         image = self.filter.rotateImage90Right(image)
                                                       
         # Extract dense point sequence on the objects contours     
-        borderPoints = self.vectorizer.getBorderPointSequence(image, Vectorizer.extractBorderedObject)
+        borderPoints = self.vectorizer.getBorderPointSequence(image, Vectorizer.extractBorderedObject, windowSize=self.windowSize)
             
         if self.debugLevel > 0: 
             GnuplotDrawer.printMultiPointPicture(borderPoints, self.domain)   
         
         imageSizeFactor = (self.domain[0][1] + self.domain[1][1]) / 2
-        outlierDist = imageSizeFactor * self.outlierDistance
+        #outlierDist = imageSizeFactor * self.outlierDistance
+        outlierDist = self.windowSize
         closeEdgesDist = imageSizeFactor * self.closeEdgesDistance 
         
         # Remove redundant points from objects contours
