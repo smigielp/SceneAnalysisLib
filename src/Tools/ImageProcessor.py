@@ -105,7 +105,7 @@ class ImageProcessor(object):
         for object in smoothVectors:
             point = Utils.getRepresentativePoint(object)
             if point is not None:
-                pixelColor = [inputImage.item(-round(point[1]), round(point[0]), i) for i in range(3)]
+                pixelColor = [inputImage.item(int(-round(point[1])), int(round(point[0])), i) for i in range(3)]
             else:
                 pixelColor = None
             colorTable.append(pixelColor)
