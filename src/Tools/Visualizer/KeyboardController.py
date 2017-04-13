@@ -59,11 +59,8 @@ class KeyboardController(object):
             window.cameraFromVehicle(not window.isCameraFromVehicle())
             pass
         if (char == 'k'):
-            from ImageApi import imageFromArray
+            from ImageApi import PILimageFromArray
             frame = window.grabFrame()
-            img = imageFromArray(frame,window.getWindowSize(),"RGBA",True)
-            import cv2
+            img = PILimageFromArray(frame,window.getWindowSize(),"RGBA",True)
             img.show()
-            test = cv2.cvtColor(frame,cv2.COLOR_RGBA2GRAY)
-            img = imageFromArray(test,window.getWindowSize(),"L",True)
-            img.show()
+            img.save("./screenshot.png")

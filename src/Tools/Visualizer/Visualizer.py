@@ -154,18 +154,26 @@ class Visualizer(object):
         self.obj.data = np.array([[0.0, 0.0, 0.0]])
         self.obj.render = True
 
-        objects = loadObjectFromObjFile("example_scene.obj",splitObjects=True)
+        objects = loadObjectFromObjFile("test_Scene_1.obj",splitObjects=True)
         for object in objects:
             object.verify()
             renObject = ModelObject(obj=object,modelType="TRIANGLES")
             self.registerModelObject(renObject)
             renObject.render = True
-            if object.name == "Plane001":
+            if object.name == "Ground":
                 renObject.color = np.array([0.2, 0.5, 0.25])
+            elif object.name == "RedBuilding":
+                renObject.color = np.array([1.0, 0.00, 0.00])
+            elif object.name == "BlueBuilding":
+                renObject.color = np.array([0.0, 0.00, 1.00])
+            elif object.name == "PurpleBuilding":
+                renObject.color = np.array([0.64, 0.28, 0.64])
+            elif object.name == "YellowBuilding":
+                renObject.color = np.array([1.0, 0.94, 0.00])
             else:
-                renObject.color = np.array([0.9, 0.04, 0.05])
-            if not ( object.name == "Plane001" or object.name == "Box004"):
-                renObject.render = False
+                renObject.color = np.array([0.7, 0.04, 0.05])
+            #if not ( object.name == "Plane001" or object.name == "Box004"):
+            #    renObject.render = False
         #self.testobj = ModelObject(obj=objects[0],modelType="TRIANGLES")
         #self.testobj.color = np.array([0.2, 0.5, 0.25])
         #self.testobj.render = True

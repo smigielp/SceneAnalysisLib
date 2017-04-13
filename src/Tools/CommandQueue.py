@@ -164,6 +164,33 @@ class CommandQueue(object):
         self._maneuverHistory.append(nCommand.getManeuverInfo())
         return
 
+    def visitPoints(self, points = np.array([]), relativeToStartingPos = False, callbackOnVisited = None,
+                    ignoreCallbackResult = False, callbackArg = None):
+        if relativeToStartingPos:
+            startPos = self._vehicle.getPositionVector()
+            for i in range(0,len(points)):
+                points[i] = startPos + points[i]
+
+        i = 0
+        for point in points:
+            currPos = self._vehicle.getPositionVector()
+            deltaPos = point - currPos
+            if deltaPos[0] != 0:
+                dalt = deltaPos[0]
+            else:
+                dalt = None
+            self.goto(deltaPos[1],deltaPos[0],dalt)
+            self.confirm()
+            i += 1
+            if callbackOnVisited is not None:
+                if callbackArg is None:
+                    if callbackOnVisited() and not ignoreCallbackResult:
+                        break
+                else:
+                    if callbackOnVisited(callbackArg) and not ignoreCallbackResult:
+                        break
+        return i
+
     def _executeQueue(self):
         if self._isExecuting:
             raise RuntimeError("CommandQueue is already executing.")
