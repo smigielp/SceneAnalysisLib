@@ -1,3 +1,5 @@
+import os
+
 import Gnuplot
 
 
@@ -99,8 +101,16 @@ def printVectorPicture(mapToPrint, domain):
     else:
         gp.plot(*plots)   
     gnuPlots.append(gp)
-            
-     
+    return gp
+
+def saveToFile(gnuPlot, name,imgSize = (400,300),path="debug/vecs/"):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    gnuPlot("set terminal png size "+str(imgSize[0])+","+str(imgSize[1])+" enhanced font \"Helvetica,20\"")
+    gnuPlot("set output '"+path+name+".png'")
+    gnuPlot("replot")
+    gnuPlot("set term win")
+
 def printArrowPicture(mapToPrint, domain=None):   
     gp = Gnuplot.Gnuplot(persist=0) 
     
@@ -127,6 +137,7 @@ def printArrowPicture(mapToPrint, domain=None):
         plots = [Gnuplot.PlotItems.Data([0, 0, 0], with_='lines')]
         gp.splot(*plots)
     gnuPlots.append(gp)
+    return gp
 
 
 ###################################################################
