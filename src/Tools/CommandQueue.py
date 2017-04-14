@@ -169,25 +169,30 @@ class CommandQueue(object):
         if relativeToStartingPos:
             startPos = self._vehicle.getPositionVector()
             for i in range(0,len(points)):
-                points[i] = startPos + points[i]
+                points[i] = np.array(points[i])
+                if len(points[i]) == 2:
+                    points[i].resize(3)
+                    if relativeToStartingPos:
+                        points[i][2] = 0
+                    else:
+                        points[i][2] = startPos[2]
+                points[i] += startPos
 
         i = 0
         for point in points:
             currPos = self._vehicle.getPositionVector()
             deltaPos = point - currPos
-            if deltaPos[0] != 0:
-                dalt = deltaPos[0]
-            else:
-                dalt = None
-            self.goto(deltaPos[1],deltaPos[0],dalt)
+            #if deltaPos[2] != 0:
+             #   dalt = deltaPos[2]
+            self.goto(deltaPos[1],deltaPos[0],deltaPos[2],True)
             self.confirm()
             i += 1
             if callbackOnVisited is not None:
                 if callbackArg is None:
-                    if callbackOnVisited() and not ignoreCallbackResult:
+                    if callbackOnVisited(i) and not ignoreCallbackResult:
                         break
                 else:
-                    if callbackOnVisited(callbackArg) and not ignoreCallbackResult:
+                    if callbackOnVisited(i,callbackArg) and not ignoreCallbackResult:
                         break
         return i
 
