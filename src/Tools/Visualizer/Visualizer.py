@@ -34,6 +34,8 @@ OGLThreadContextName = '__main__'
 class Visualizer(object):
     def __init__(self, vehicleTracked, shouldInitialize=False):
 
+        self.debug_OpenGL = False
+
         self.dronePos = np.array([0, 0, -7])
 
         self.cameraUpdated = True
@@ -262,9 +264,10 @@ class Visualizer(object):
                         glDrawArrays(model.modelType, 0, model.bufferSize)
                     glDisableVertexAttribArray(0)
 
-        mess = get_debug_output()
-        if len(mess) > 0:
-            print mess
+        if self.debug_OpenGL:
+            mess = get_debug_output()
+            if len(mess) > 0:
+                print mess
 
         if self._waitingOnFrame:
             self._writeFrame()
