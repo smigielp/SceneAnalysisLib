@@ -637,7 +637,7 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
     photoPoint=[-1,-1]
 
     if len(vectors)<3 or vectors[0]!=vectors[-1]:
-        return [photoPoint, headingChange, chosenEdge]
+        return [photoPoint, headingChange, photoPoint, headingChange, chosenEdge]
 
     cutVect=list(vectors)
     while cutVect[-1]==cutVect[0]:
