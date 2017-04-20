@@ -26,7 +26,22 @@ class QuadcopterApi(object):
         self.quad = connect(connectString, wait_ready=True)
         self.getState()
         self.commandQueue = CommandQueue(self)
-    
+        self.printCommand = True
+        self.printCommandStatus = True
+        self.printCommandStatusChecks = True
+
+    def supressMessages(self,commands = None,commandsStatus = None,commandsChecks = None, all = None):
+        if commands is not None:
+            self.printCommand = not commands
+        if commandsStatus is not None:
+            self.printCommandStatus = not commandsStatus
+        if commandsChecks is not None:
+            self.printCommandStatusChecks = not commandsChecks
+        if all is not None:
+            self.printCommand = not all
+            self.printCommandStatus = not all
+            self.printCommandStatusChecks = not all
+
     def continueAction(self):
         return self.quad.mode.name == VehicleMode('GUIDED')
      
@@ -71,7 +86,8 @@ class QuadcopterApi(object):
         
     def setMode(self, modeName):
         self.quad.mode = VehicleMode(modeName)
-        print datetime.now(), '- Waiting for', modeName, ' mode...'
+        if self.printCommandStatusChecks:
+            print datetime.now(), '- Waiting for', modeName, ' mode...'
         waiter = 0
         while self.quad.mode != VehicleMode(modeName):
             sleep(1)
@@ -79,14 +95,16 @@ class QuadcopterApi(object):
             if waiter == MAX_WAIT_FOR_MODE:
                 print datetime.now(), '- timeout while waiting for ', modeName, ' mode'
                 return
-        print datetime.now(), '-', modeName, 'mode set'
+        if self.printCommand:
+            print datetime.now(), '-', modeName, 'mode set'
         
         
     def arm(self):       
         if(not self.quad.armed):
             self.quad.armed = True
             while(not self.quad.armed):
-                print datetime.now(), '- waiting for vehicle to arm...'
+                if self.printCommandStatusChecks:
+                    print datetime.now(), '- waiting for vehicle to arm...'
                 sleep(1)                           
                 self.quad.armed = True
         else:
@@ -102,10 +120,12 @@ class QuadcopterApi(object):
             print "Dangerously low target altitude during takeoff!"
         self.quad.simple_takeoff(targetAlt-1)
         while True:
-            print datetime.now(), 'Altitude:', self.quad.location.global_relative_frame.alt 
+            if self.printCommandStatusChecks:
+                print datetime.now(), 'Altitude:', self.quad.location.global_relative_frame.alt
             #Break and return from function just below target altitude.        
             if self.quad.location.global_relative_frame.alt>=(targetAlt-1)*0.95:
-                print datetime.now(), 'Reached target altitude'
+                if self.printCommandStatus:
+                    print datetime.now(), 'Reached target altitude ', self.quad.location.global_relative_frame.alt
                 break
             time.sleep(1)
         self.goto(0,0,1,True)
@@ -123,9 +143,11 @@ class QuadcopterApi(object):
     
         while self.continueAction():
             remainingDistance=get_distance_metres(self.quad.location.global_relative_frame, targetLocation)
-            print datetime.now(), '- Distance to target:  ', remainingDistance
+            if self.printCommandStatusChecks:
+                print datetime.now(), '- Distance to target:  ', remainingDistance
             if remainingDistance<=0.25:
-                print datetime.now(), '- Reached target'
+                if self.printCommandStatus:
+                    print datetime.now(), '- Reached target'
                 break;
             sleep(1)
     
@@ -139,8 +161,10 @@ class QuadcopterApi(object):
         else:
             is_relative=0 #yaw is an absolute angle
             realTargetHeading = heading%360
-        print "current: ", self.quad.heading
-        print "target:  ", realTargetHeading
+        if self.printCommandStatusChecks:
+            print "current heading: ", self.quad.heading
+        if self.printCommand:
+            print "Setting heading to:  ", realTargetHeading
         msg = self.quad.message_factory.command_long_encode(
             0, 0,    # target system, target component
             mavutil.mavlink.MAV_CMD_CONDITION_YAW, #command
@@ -154,9 +178,11 @@ class QuadcopterApi(object):
         self.quad.send_mavlink(msg)
         while self.continueAction():
             currentHeading = self.quad.heading
-            print datetime.now(), '- Current heading:  ', currentHeading
+            if self.printCommandStatusChecks:
+                print datetime.now(), '- Current heading:  ', currentHeading
             if abs(currentHeading - realTargetHeading) <= 2.0:
-                print datetime.now(), '- Heading set'
+                if self.printCommandStatus:
+                    print datetime.now(), '- Heading set ', currentHeading
                 break
 
             sleep(1)
@@ -175,10 +201,12 @@ class QuadcopterApi(object):
             
     def setCameraAim(self, direction):        
         if direction == FRONT:
-            print datetime.now(), '- Aiming camera front' 
+            if self.printCommand:
+                print datetime.now(), '- Aiming camera front'
             self.quad.gimbal.rotate(-50, 0, 0)
         elif direction == DOWN:
-            print datetime.now(), '- Aiming camera down' 
+            if self.printCommand:
+                print datetime.now(), '- Aiming camera down'
             self.quad.gimbal.rotate(-10, 0, 0)
              
 
@@ -203,14 +231,16 @@ class QuadcopterApi(object):
         Moves drone by @param distance meters towards direction which it is facing.
         If @param maintainHeading is true, drone will rotate to original direction if it was changed.
         """
-        print "moving forward by ", distance
+        if self.printCommand:
+            print "moving forward by ", distance
         currentHeading = self.quad.heading
         vec = translate_vec([0,distance], currentHeading)
         east = vec[0]
         north = vec[1]
         self.goto(north,east)
         if maintainHeading:
-            print "Setting original heading..."
+            if self.printCommand:
+                print "Setting original heading..."
             self.changeHeading(currentHeading,False)
 
     def moveToLocRelativeHeading(self, forward, right, maintainHeading=True):
@@ -220,7 +250,8 @@ class QuadcopterApi(object):
         Moves drone to the position located @param forward meters forward and @param right meters to the right.
         If @param maintainHeading is true, drone will rotate to original direction if it was changed.
         """
-        print "moving by ", forward, ",", right
+        if self.printCommand:
+            print "moving by ", forward, ",", right
         heading = self.quad.heading
         vec = translate_vec([right,forward], heading)
         east=vec[0]
@@ -230,7 +261,8 @@ class QuadcopterApi(object):
         #self.changeHeading(rotateAngle)
         #self.moveForward(math.sqrt(forward*forward+right*right),maintainHeading)
         if maintainHeading:
-            print "Setting original heading..."
+            if self.printCommand:
+                print "Setting original heading..."
             self.changeHeading(heading,False)
             
 def get_location_metres(original_location, dNorth, dEast, dalt):

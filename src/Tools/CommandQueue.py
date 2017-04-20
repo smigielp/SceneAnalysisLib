@@ -248,15 +248,18 @@ class CommandQueue(object):
                 targetPos[0] += east
                 targetPos[1] += north
                 targetPos[2] += m.deltaArg[2]
-        print "targetPos: ", targetPos
-        print "targetAngle: ", targetAngle
+        if self._vehicle.printCommand:
+            print "targetPos: ", targetPos
+            print "targetAngle: ", targetAngle
         sleep(1)
-        self._vehicle.getState()
+        if self._vehicle.printCommandStatusChecks:
+            self._vehicle.getState()
         currPosition = self._vehicle.getPositionVector()
         deltaVector = targetPos - currPosition
         deltaAngle = targetAngle - [self._vehicle.quad.heading, 0, 0]
-        print "deltaVector: ", deltaVector
-        print "deltaAngle: ", deltaAngle
+        if self._vehicle.printCommand:
+            print "deltaVector: ", deltaVector
+            print "deltaAngle: ", deltaAngle
         self._vehicle.goto(deltaVector[1], deltaVector[0], deltaVector[2], True, 0.3)
         self._vehicle.changeHeading(deltaAngle[0], True)
         return
