@@ -624,12 +624,13 @@ def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, le
     finaleMovementVector = [movementVector[0] * math.cos(-math.radians(quadHeading)) - movementVector[1] * math.sin(-math.radians(quadHeading)),movementVector[0] * math.sin(-math.radians(quadHeading)) + movementVector[1] * math.cos(-math.radians(quadHeading))]
     return finaleMovementVector
 
-def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, lensAngleH, lensAngleV, mapWidth=780, mapHeight=450):
+def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, photoHeight=0.33, lensAngleH, lensAngleV, mapWidth=780, mapHeight=450):
     '''
     Returns a list: coordinates of points for front and right photo and heading changes for both (in degrees) - positive value -> turn to the right, negative -> left
     '''
 
-    relativeBuildingHeight = biuldingHeight * mapWidth / (2 * photoAltitude * math.tan(math.radians(lensAngleH)))
+    relativeBuildingHeight = biuldingHeight * mapWidth / (2 * photoAltitude * math.tan(math.radians(lensAngleH/2)))
+    photoHeightRatio=max(photoHeight, 1-photoHeight)
 
     minArea= float("inf")
     headingChange = 0
@@ -670,12 +671,13 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
                 if apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.2 > point [1]:
                     point[1]= apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.2
 
-            if max(Y) + relativeBuildingHeight / 2 /math.tan(math.radians(lensAngleV/2)) * 1.2 > point[1]:
-                point[1] = max(Y) + relativeBuildingHeight / 2 /math.tan(math.radians(lensAngleV/2)) * 1.2
+            if max(Y) + relativeBuildingHeight * photoHeightRatio /math.tan(math.radians(lensAngleV/2)) * 1.2 > point[1]:
+                point[1] = max(Y) + relativeBuildingHeight * photoHeightRatio /math.tan(math.radians(lensAngleV/2)) * 1.2
 
             point=[point[0] * math.cos(-angle) - point[1] * math.sin(-angle), point[1] * math.cos(-angle) + point[0] * math.sin(-angle)]
             point=[point[0] + center[0], point[1]+ center[1]]
             collision=False
+            collision1 = True
             for vert in map:
                 if len(vert) >= 3 and vert[0]==vert[-1]:
                     collision = isPointInPolygon(point, vert[:-2], 0, 1)
@@ -700,7 +702,6 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
                 #           point1[1] * math.cos(math.pi / 2) + point1[0] * math.sin(math.pi / 2)]
                 point1 = [point1[0] + center[0], point1[1] + center[1]]
 
-                collision1 = False
                 # collision2 = False
                 for vert in map:
                     if len(vert) >= 3 and vert[0] == vert[-1]:
