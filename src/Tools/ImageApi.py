@@ -90,6 +90,7 @@ class Filter(object):
          
          
     def rotateImage90Right(self, imagecv):
+        print imagecv.shape
         (h, w) = imagecv.shape[:2]
         (cX, cY) = (w // 2, h // 2)
         rotationMatrix = cv2.getRotationMatrix2D((cX, cY), -90, 1)
@@ -184,7 +185,7 @@ class Filter(object):
                     image = cv2.bitwise_and(image, image, mask = mask)
                     break
                 
-        #self.showImage(image)        
+        self.showImage(image)        
         #image = cv2.medianBlur(image, 5)        
         image = cv2.Canny(image, 80, 200)        
         return image
