@@ -636,6 +636,8 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
     headingChange = 0
     chosenEdge=[]
     photoPoint=[-1,-1]
+    secondPhotoPoint=[-1,-1]
+    secondHeadingChange=0
 
     if len(vectors)<3 or vectors[0]!=vectors[-1]:
         return [photoPoint, headingChange, photoPoint, headingChange, chosenEdge]
@@ -694,8 +696,8 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
                     # if apex[1] - math.fabs(point2[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2 < point2[1]:
                     #     point2[1] = apex[1] - math.fabs(point2[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2
 
-                if max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight / 2 / math.tan(math.radians(lensAngleV / 2)) * 1.2 > point1[1]:
-                    point1[1] = max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight / 2 / math.tan(math.radians(lensAngleV / 2)) * 1.2
+                if max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight * photoHeightRatio / math.tan(math.radians(lensAngleV / 2)) * 1.2 > point1[1]:
+                    point1[1] = max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight * photoHeightRatio / math.tan(math.radians(lensAngleV / 2)) * 1.2
 
                 point1 = [point1[0] * math.cos(math.pi / 2 - angle) - point1[1] * math.sin(math.pi / 2 - angle), point1[1] * math.cos(math.pi / 2 - angle) + point1[0] * math.sin(math.pi / 2 - angle)]
                 # point1 = [point1[0] * math.cos(angle) - point1[1] * math.sin(angle),
@@ -717,16 +719,16 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
                     headingChange-=360
                 chosenEdge = [cutVect[i],cutVect[next]]
                 secondPhotoPoint= [point1[0] - point[0] + mapWidth/2, point1[1]- point[1] + mapHeight/2]
-                seconHeadingChange=-90
+                secondHeadingChange=-90
                 photoPoint=point
 
     print "\tChosen edge: ", chosenEdge
     print "\tHeading change: ", headingChange
     print "\tPhoto point: ", photoPoint
-    print "\tSecond heading change: ", seconHeadingChange
+    print "\tSecond heading change: ", secondHeadingChange
     print "\tSecond photo point: ", secondPhotoPoint
     #GnuplotDrawer.printVectorPicture([doubleRotatedVect], [[0, 781L], [0, 458L]])
-    return [photoPoint, headingChange, secondPhotoPoint, seconHeadingChange, chosenEdge]
+    return [photoPoint, headingChange, secondPhotoPoint, secondHeadingChange, chosenEdge]
 
 def getNumpyArray(list):
     """
