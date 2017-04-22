@@ -10,7 +10,7 @@ shouldExit = False
 
 def _startTracking(vehicleToTrack):
     xrange = [-4,4]
-    hrange = [-2,10]
+    hrange = [-2,30]
     points = list()
     points.append([[0, 0, 0]])
     domain=[xrange,xrange,hrange]

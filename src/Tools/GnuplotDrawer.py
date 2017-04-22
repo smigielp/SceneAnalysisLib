@@ -106,7 +106,7 @@ def printVectorPicture(mapToPrint, domain):
 def saveToFile(gnuPlot, name,imgSize = (400,300),path="debug/vecs/"):
     if not os.path.exists(path):
         os.makedirs(path)
-    gnuPlot("set terminal png size "+str(imgSize[0])+","+str(imgSize[1])+" enhanced font \"Helvetica,20\"")
+    gnuPlot("set terminal png size "+str(imgSize[0])+","+str(imgSize[1])+" enhanced font \"Helvetica,12\"")
     gnuPlot("set output '"+path+name+".png'")
     gnuPlot("replot")
     gnuPlot("set term win")
