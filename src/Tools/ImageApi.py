@@ -184,8 +184,7 @@ class Filter(object):
                     mask = cv2.inRange(image, lower, upper)
                     image = cv2.bitwise_and(image, image, mask = mask)
                     break
-                
-        self.showImage(image)        
+                     
         #image = cv2.medianBlur(image, 5)        
         image = cv2.Canny(image, 80, 200)        
         return image

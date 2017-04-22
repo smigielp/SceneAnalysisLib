@@ -111,8 +111,7 @@ def comparePatterns(pat1, pat2):
             # porownywanych bryl sa dostatecznie male 
             if standardDev < meanProp * 0.15:  
                 # print dirChange1
-                # print dirChange2 
-                print "OKKKKK"       
+                # print dirChange2   
                 return {'scale': wallLenProps[0], 'rotate': (pat1[i][0] - pat2[0][0]) % 2}   
     return None
     
