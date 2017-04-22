@@ -622,7 +622,7 @@ def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, le
     movementVector.append(2 * (targetCoords[1] - resolutionY / 2) * altitude * math.tan(math.radians(lensAngleV / 2)) / resolutionY)
     #changing the values according to quad heading
     finaleMovementVector = [movementVector[0] * math.cos(-math.radians(quadHeading)) - movementVector[1] * math.sin(-math.radians(quadHeading)),movementVector[0] * math.sin(-math.radians(quadHeading)) + movementVector[1] * math.cos(-math.radians(quadHeading))]
-    return finaleMovementVector
+    return [finaleMovementVector[1], finaleMovementVector[0]]
 
 def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, lensAngleH, lensAngleV, mapWidth=780, mapHeight=450, photoHeight=0.33):
     '''
@@ -719,7 +719,9 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
                     headingChange-=360
                 chosenEdge = [cutVect[i],cutVect[next]]
                 secondPhotoPoint= [point1[0] - point[0] + mapWidth/2, point1[1]- point[1] + mapHeight/2]
-                secondHeadingChange=-90
+                #secondPhotoPoint=point1
+                #secondHeadingChange=-90
+                secondHeadingChange = headingChange - 90
                 photoPoint=point
 
     print "\tChosen edge: ", chosenEdge
