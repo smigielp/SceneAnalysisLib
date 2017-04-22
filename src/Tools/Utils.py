@@ -624,7 +624,7 @@ def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, le
     finaleMovementVector = [movementVector[0] * math.cos(-math.radians(quadHeading)) - movementVector[1] * math.sin(-math.radians(quadHeading)),movementVector[0] * math.sin(-math.radians(quadHeading)) + movementVector[1] * math.cos(-math.radians(quadHeading))]
     return finaleMovementVector
 
-def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, lensAngleH, lensAngleV, photoHeight=0.33, mapWidth=780, mapHeight=450):
+def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, photoHeight=0.33, lensAngleH, lensAngleV, mapWidth=780, mapHeight=450):
     '''
     Returns a list: coordinates of points for front and right photo and heading changes for both (in degrees) - positive value -> turn to the right, negative -> left
     '''
