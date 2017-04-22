@@ -162,6 +162,8 @@ class Visualizer(object):
             renObject = ModelObject(obj=object,modelType="TRIANGLES")
             self.registerModelObject(renObject)
             renObject.render = True
+            ##if object.name != "RedBuilding" And object.name != "Ground" :
+            #    renObject.render = False
             if object.name == "Ground":
                 renObject.color = np.array([0.2, 0.5, 0.25])
             elif object.name == "RedBuilding":
@@ -172,6 +174,8 @@ class Visualizer(object):
                 renObject.color = np.array([0.64, 0.28, 0.64])
             elif object.name == "YellowBuilding":
                 renObject.color = np.array([1.0, 0.94, 0.00])
+            elif object.name.find("interior",0)>=0:
+                renObject.color = np.array([0.25, 0.62, 1.00])
             else:
                 renObject.color = np.array([0.7, 0.04, 0.05])
             #if not ( object.name == "Plane001" or object.name == "Box004"):
@@ -335,7 +339,7 @@ class Visualizer(object):
             self.fieldOfView = 80.0
             self.aspect = float(self.width) / self.height
             self.zNear = 0.1
-            self.zFar = 50
+            self.zFar = 100
             self.projectionUpdate()
 
         @property
