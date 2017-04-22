@@ -56,6 +56,7 @@ class ImageProcessor(object):
         self.closeEdgesDistance = self.config.getfloat(configFileSection, "closeEdgesDistance")       
         # vector postprocessing parameters
         self.straightThreshold = self.config.getint(configFileSection, "straightThreshold")
+        self.angleThreshold = self.config.getfloat(configFileSection, "angleThreshold")
         self.postprocesLevel = self.config.getint(configFileSection, "postprocesLevel")
      
         
@@ -95,6 +96,7 @@ class ImageProcessor(object):
         
         smoothVectors = self.vectorizer.vectorPostProcessing(smoothVectors,
                                                combThreshold=closeEdgesDist,
+                                               angleThreshold=self.angleThreshold,
                                                postProcLevel=self.postprocesLevel) 
 
         if self.debugLevel > 0:

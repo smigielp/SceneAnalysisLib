@@ -51,6 +51,8 @@ def compareAngles(angle1, angle2):
 # kazda taka para koduje jedna sciane bryly  
 def extractPattern(vertex, basePatternLen):
     pattern = []
+    print '==============='
+    print vertex
     for i in range(len(vertex) - 1):
         line = [vertex[i], vertex[i + 1]]
         lLen = Utils.getDistance(line[0], line[1])
@@ -118,7 +120,7 @@ def comparePatterns(pat1, pat2):
 ########################################################################################
 # Funkcje realizujace kompletne zadania
 #  
-def findSinglePattern(patternElement, patternList, primitiveLen):
+def findSinglePattern(patternElement, patternList, primitiveLen=5):
     fullPattern = []
     for v in patternList:
         pattern = extractPattern(v, primitiveLen)

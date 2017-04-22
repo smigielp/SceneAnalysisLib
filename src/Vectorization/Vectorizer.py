@@ -170,9 +170,10 @@ class Vectorizer(object):
     
        
     
-    def vectorPostProcessing(self, lines, combThreshold=8, straightThreshold=5, postProcLevel=4):
+    def vectorPostProcessing(self, lines, combThreshold=8, straightThreshold=5, angleThreshold=0.05, postProcLevel=4):
         if postProcLevel > 0:
             self.combineCloseVectors(lines, combThreshold)
+            self.combineVectorsOnSingleLine(lines, angleThreshold)
             if self.debugLevel > 1:
                 GnuplotDrawer.printVectorPicture(lines, self.domain)       
         if postProcLevel > 1:
@@ -254,5 +255,39 @@ class Vectorizer(object):
             if crossing != None:
                 vertex[0] = deepcopy(crossing)
                 vertex[-1] = deepcopy(crossing)
+            
                     
-    
+    def combineVectorsOnSingleLine(self, lines, threshold):
+        x = 0
+        while x < len(lines):
+            line = lines[x]
+            if len(line) > 2:
+                j = 2
+                ptsToRemove = []
+                while j < len(line):
+                    angle1 = Utils.getLineAngle(line[j - 2], line[j - 1])
+                    angle2 = Utils.getLineAngle(line[j - 1], line[j])
+                    
+                    if abs(angle1 - angle2) < threshold:
+                        ptsToRemove.append(j - 1)
+                    # while j < len(line)-1 and abs(angle1 - angle2) < threshold:
+                    #    ptsToRemove.append(j-1)                 
+                    #    j += 1   
+                    #    angle1 = Utils.getLineAngle(line[i], line[i+1])
+                    #    angle2 = Utils.getLineAngle(line[j-1], line[j])    
+                    
+                        # j += 1
+                        # print line[i], line[i+1], ' -> ', angle1
+                        # print line[i], line[j], ' -> ', angle2
+                        # print '------'
+                    j += 1
+                
+                
+                lines[x] = [line[i] for i in range(len(line)) if i not in ptsToRemove]
+                # Checking if first and last vector lies on single line
+                angle1 = Utils.getLineAngle(lines[x][0], lines[x][1])
+                angle2 = Utils.getLineAngle(lines[x][-2], lines[x][-1])
+                if abs(angle1 - angle2) < threshold:
+                    lines[x].pop()
+                    lines[x][0] = deepcopy(lines[x][-1])
+            x += 1                
