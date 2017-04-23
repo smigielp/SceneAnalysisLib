@@ -117,7 +117,10 @@ def comparePatterns(pat1, pat2):
     
     
 ########################################################################################
-# Funkcje realizujace kompletne zadania
+# Function realizing complete task of pattern recognition
+# patrenElement - vector representation of object dedicated to be searched
+# patternList   - list of vector representations in which patternElement is searched
+# primitiveLen  - length of walls used in object representation build method
 #  
 def findSinglePattern(patternElement, patternList, primitiveLen=5):
     fullPattern = []
