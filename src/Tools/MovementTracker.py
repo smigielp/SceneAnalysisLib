@@ -7,6 +7,8 @@ import VehicleApi
 from time import sleep
 
 shouldExit = False
+path = list()
+PATH_POINTS_DELAY = 2.
 
 def _startTracking(vehicleToTrack):
     xrange = [-4,4]
@@ -16,6 +18,7 @@ def _startTracking(vehicleToTrack):
     domain=[xrange,xrange,hrange]
     trajectoryGraph = GnuplotDrawer.printMultiPointPicture(points, domain)
     sleep(2)
+    timer = 0.
     while not shouldExit :
         localFrame = vehicleToTrack.quad.location.local_frame
         if (not localFrame.north is None) and (not localFrame.east is None):
@@ -35,7 +38,11 @@ def _startTracking(vehicleToTrack):
             GnuplotDrawer.setLabel(trajectoryGraph,arrow[0],label,1)
             GnuplotDrawer.setArrow(trajectoryGraph,arrow,1)
             GnuplotDrawer.setPoints(trajectoryGraph, points)
+            if (timer >= PATH_POINTS_DELAY):
+                timer = 0.
+                path.append(position)
         sleep(0.5)
+        timer += 0.5
 
 
 def start(vehicleToTrack):
@@ -46,3 +53,9 @@ def start(vehicleToTrack):
 def stop():
     global shouldExit
     shouldExit = True
+
+def getPath():
+    import numpy as np
+    global path
+    p = np.array(path)
+    return p
