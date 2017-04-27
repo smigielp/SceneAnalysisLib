@@ -164,8 +164,19 @@ class CommandQueue(object):
         self._maneuverHistory.append(nCommand.getManeuverInfo())
         return
 
-    def visitPoints(self, points = np.array([]), relativeToStartingPos = False, callbackOnVisited = None,
+    def visitPoints(self, points = np.array([]), relativeToStartingPos = False,relativeNextShift = False, callbackOnVisited = None,
                     ignoreCallbackResult = False, callbackArg = None):
+
+        #relativeNextShift - wether points are vectors by which vehicle has to move each time
+        if relativeNextShift:
+            delta = points[0]
+            for i in range(1,len(points)):
+                points[i] = np.array(points[i])
+                temp = points[i]
+                points[i] += delta
+                delta +=temp
+
+        #relativeToStartingPos - wether points has to be shifted by starting pos of vehicle
         if relativeToStartingPos:
             startPos = self._vehicle.getPositionVector()
             for i in range(0,len(points)):
