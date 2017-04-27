@@ -164,6 +164,9 @@ class Visualizer(object):
             renObject = ModelObject(obj=object,modelType="TRIANGLES")
             self.registerModelObject(renObject)
             renObject.render = True
+
+            renObject.rotate(np.array([0.,230.,0.])) # <---- scene rotation
+
             if SIMPLE_SCENE:
                 if object.name != "RedBuilding" and object.name != "Ground" and not object.name.find("interior",0)>=0:
                     renObject.render = False
