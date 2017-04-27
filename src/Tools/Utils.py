@@ -622,7 +622,7 @@ def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, le
     movementVector.append(2 * (targetCoords[1] - resolutionY / 2) * altitude * math.tan(math.radians(lensAngleV / 2)) / resolutionY)
     #changing the values according to quad heading
     finaleMovementVector = [movementVector[0] * math.cos(-math.radians(quadHeading)) - movementVector[1] * math.sin(-math.radians(quadHeading)),movementVector[0] * math.sin(-math.radians(quadHeading)) + movementVector[1] * math.cos(-math.radians(quadHeading))]
-    return [finaleMovementVector[1], finaleMovementVector[0]]
+    return [finaleMovementVector[0], finaleMovementVector[1]]
 
 def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, lensAngleH, lensAngleV, mapWidth=780, mapHeight=450, photoHeight=0.33):
     '''
