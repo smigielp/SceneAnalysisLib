@@ -58,6 +58,9 @@ class KeyboardController(object):
             # window._V = Transformations.lookAtMatrix(xyzFrom=np.array([0.,2.,2.]),xyzAtPosition=np.array([0.,0.,0.]))
             window.cameraFromVehicle(not window.isCameraFromVehicle())
             pass
+        if (char == 'l'):
+            window.vehicle.supressMessages(all= window.vehicle.printCommand)
+            pass
         if (char == 'k'):
             from ImageApi import PILimageFromArray
             frame = window.grabFrame()
