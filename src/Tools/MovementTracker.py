@@ -55,7 +55,7 @@ def stop():
     shouldExit = True
 
 def getPath():
-    import numpy as np
+    import Utils
     global path
-    p = np.array(path)
+    p = Utils.getNumpyArray(path)
     return p
