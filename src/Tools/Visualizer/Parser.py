@@ -44,7 +44,7 @@ class Object3d(object):
             if not self.faceHasNormals(face):
                 print "Invalid face, ",face
                 continue
-            for i in range(0,2):
+            for i in range(0,3):
                 v = self.vertexArray[face[0][i]]
                 n = self.NormalsArray[face[2][i]]
                 f = self.findSimilarVertex(v,n)
@@ -53,7 +53,7 @@ class Object3d(object):
                     self.tempNormalArray.append(n)
                     self.elements.append(len(self.tempVertexArray)-1)
                 else:
-                     self.elements.append(i)
+                     self.elements.append(f)
         self.vertexArray = Utils.getNumpyArray(self.tempVertexArray)
         self.NormalsArray = Utils.getNumpyArray(self.tempNormalArray)
         self.tempVertexArray = None
