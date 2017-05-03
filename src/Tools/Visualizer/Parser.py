@@ -5,6 +5,8 @@ Created on 23 mar 2017
 '''
 import numpy as np
 
+import Utils
+
 
 class Object3d(object):
     def __init__(self,vertices=None,uvs=None,normals=None,faces=None):
@@ -19,13 +21,58 @@ class Object3d(object):
 
     def buildObject(self):
         self.elements = []
+        if self.NormalsArray is not None and len(self.NormalsArray) > 0 and\
+                        len(self.NormalsArray) != len(self.vertexArray):
+            self.buildWithNormalArray()
+        else:
+            self.build()
+        self.elements = np.array(self.elements)
+
+    def build(self):
         for face in self.facesArray:
             if face[0][0]==-1 or face[0][1]==-1 or face[0][2]==-1:
                 continue
             self.elements.append(face[0][0])
             self.elements.append(face[0][1])
             self.elements.append(face[0][2])
-        self.elements = np.array(self.elements)
+
+    def buildWithNormalArray(self):
+        self.tempNormalArray = []
+        self.tempVertexArray = []
+
+        for face in self.facesArray:
+            if not self.faceHasNormals(face):
+                print "Invalid face, ",face
+                continue
+            for i in range(0,2):
+                v = self.vertexArray[face[0][i]]
+                n = self.NormalsArray[face[2][i]]
+                f = self.findSimilarVertex(v,n)
+                if f==-1:
+                    self.tempVertexArray.append(v)
+                    self.tempNormalArray.append(n)
+                    self.elements.append(len(self.tempVertexArray)-1)
+                else:
+                     self.elements.append(i)
+        self.vertexArray = Utils.getNumpyArray(self.tempVertexArray)
+        self.NormalsArray = Utils.getNumpyArray(self.tempNormalArray)
+        self.tempVertexArray = None
+        self.tempNormalArray = None
+
+    def faceHasNormals(self, face):
+        return not (face[2][0]==-1 or face[2][1]==-1 or face[2][2]==-1)
+
+    def findSimilarVertex(self,vertex,normal):
+        i = 0
+        for v in self.tempVertexArray:
+            dist = np.linalg.norm(vertex - v)
+            if i >= len(self.tempNormalArray):
+                break
+            distn = np.linalg.norm(self.tempNormalArray[i] - normal)
+            if dist < 0.00001 and distn < 0.00001:
+                return i
+            i+=1
+        return -1
 
     def verify(self):
         for ele in self.elements:
@@ -49,20 +96,32 @@ def loadObjectFromObjFile(path,splitObjects=False):
     facesList = []
     currObject = None
 
+    totalVertexCount = 0
+    totalTextureCount = 0
+    totalNormalsCount = 0
+    totalFaceCount = 0
+
     prevVertexCount = 0
     currVertexCount = 0
     vertexCount = 0
+    prevNormalsCount = 0
+    currNormalsCount = 0
+    normalsCount = 0
+    #todo: count texture coordinates
     for line in objFile:
         split = line.split()
         if not len(split):
             continue
         if split[0] == "g": #model name
-            #todo: split if there are multiple objects in file and if necessary
             if splitObjects:
                 vertexArray = np.array(VertexList,dtype=np.float32)
                 textureArray = np.array(UVCoordinatesList,dtype=np.float32)
                 normalsArray = np.array(NormalsList,dtype=np.float32)
                 faceArray = np.array(facesList,dtype=np.int32)
+                totalVertexCount += len(vertexArray)
+                totalTextureCount += len(textureArray)
+                totalNormalsCount += len(normalsArray)
+                totalFaceCount += len(faceArray)
 
                 if currObject is not None:
                     currObject.facesArray = faceArray
@@ -70,9 +129,12 @@ def loadObjectFromObjFile(path,splitObjects=False):
                     currObject.verify()
                     objectsList.append(currObject)
                     prevVertexCount = prevVertexCount+currVertexCount
+                    prevNormalsCount = prevNormalsCount+currNormalsCount
 
                 currVertexCount = vertexCount
                 vertexCount = 0
+                currNormalsCount = normalsCount
+                normalsCount = 0
                 currObject = Object3d(vertexArray,textureArray,normalsArray,None)
 
                 if len(split)>1:
@@ -93,6 +155,7 @@ def loadObjectFromObjFile(path,splitObjects=False):
             npVertex = np.array(vertex,dtype=np.float)
             VertexList.append(npVertex)
         elif split[0] == "vn": #normal
+            normalsCount+=1
             normal = split[1:]
             npNormal = np.array(normal,dtype=np.float)
             NormalsList.append(npNormal)
@@ -120,22 +183,22 @@ def loadObjectFromObjFile(path,splitObjects=False):
                     if removeSlash[2] == "":
                         face[2][count - 1] = -1
                     else:
-                        face[2][count-1] = int(removeSlash[2])-1
+                        face[2][count-1] = int(removeSlash[2])-1-prevNormalsCount
                 count += 1
             facesList.append(face)
         elif split[0] == "#" or split[0][0] == '#': #special
             continue
 
-    vertexCount = len(VertexList)
-    textureCount = len(UVCoordinatesList)
-    normalsCount = len(NormalsList)
-    faceCount = len(facesList)
+    if not splitObjects:
+        totalVertexCount = len(VertexList)
+        totalTextureCount = len(UVCoordinatesList)
+        totalNormalsCount = len(NormalsList)
+        totalFaceCount = len(facesList)
 
-    #todo: fix stats when there are multiple objects
-    print ("Total vertices: " + str(vertexCount))
-    print ("Total texture coordinates: " + str(textureCount))
-    print ("Total normals: " + str(normalsCount))
-    print ("Total faces: " + str(faceCount))
+    print ("Total vertices: " + str(totalVertexCount))
+    print ("Total texture coordinates: " + str(totalTextureCount))
+    print ("Total normals: " + str(totalNormalsCount))
+    print ("Total faces: " + str(totalFaceCount))
 
     objFile.close()
 
