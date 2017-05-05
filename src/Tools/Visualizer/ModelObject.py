@@ -3,7 +3,7 @@ Created on 5 mar 2017
 
 @author: Mateusz Raczynski
 '''
-from OpenGL.GL.VERSION.GL_1_5 import glGenBuffers
+from OpenGL.GL.VERSION.GL_1_5 import glGenBuffers, GL_FLOAT, GL_FALSE, sizeof, GL_TRUE
 from OpenGL.GL.VERSION.GL_1_5 import glBindBuffer
 from OpenGL.GL.VERSION.GL_1_5 import glBufferData
 from OpenGL.GL.VERSION.GL_1_5 import glDeleteBuffers
@@ -20,6 +20,10 @@ from OpenGL.GL.VERSION.GL_1_1 import GL_LINES
 from OpenGL.GL.VERSION.GL_1_1 import GL_TRIANGLES
 from OpenGL.GL.VERSION.GL_1_1 import GL_LINE_STRIP
 from OpenGL.GL.VERSION.GL_1_1 import GL_TRIANGLE_STRIP
+
+from OpenGL.raw.GL.VERSION.GL_2_0 import glEnableVertexAttribArray
+from OpenGL.raw.GL.VERSION.GL_2_0 import glVertexAttribPointer
+from ctypes import c_float
 
 from Transformations import translate
 from Transformations import scale
@@ -78,16 +82,23 @@ class ModelObject(object):
         self._mtype = MODELTYPES[modelType]
 
         self._updateObjectMatrix = False
-        self._objectMatrix = np.identity(4)
+        self._objectMatrix = np.identity(4,dtype=np.float32)
         self._rotation = np.array([0.0, 0.0, 0.0])
         self._position = np.array([0.0, 0.0, 0.0])
         self._scale = np.array([1.0, 1.0, 1.0])
         self._color = np.array([1.0, 0.0, 0.0])
 
+        self._normals = None
+        self._updateNormals = False
+        self._hasNormals = False
+        self._bufferNormals = long(-1)
+
         #todo: make sure elements and vertexArray is not None
         if obj is not None:
             self.elements = obj.elements
             self.data = obj.vertexArray
+            if obj.NormalsArray is not None:
+                self.normals = obj.NormalsArray
 
     @property
     def color(self):
@@ -101,7 +112,7 @@ class ModelObject(object):
     def updateObjectMatrix(self):
         with self._lock:
             self._updateObjectMatrix = False
-            self._objectMatrix = np.identity(4)
+            self._objectMatrix = np.identity(4,dtype=np.float32)
             self._objectMatrix = rotateDegrees(self._objectMatrix, xyz=self._rotation)
             self._objectMatrix = scale(self._objectMatrix, xyz=self._scale)
             self._objectMatrix = translate(self._objectMatrix, xyz=self._position)
@@ -208,6 +219,22 @@ class ModelObject(object):
         with self._lock:
             self.elements = elements
 
+    @property
+    def normals(self):
+        return self._normals
+
+    @normals.setter
+    def normals(self,normals):
+        normals = getNumpyArray(normals)
+        with self._lock:
+            self._normals = normals
+            self._hasNormals = True
+            self._updateNormals = True
+
+    @property
+    def hasNormals(self):
+        return self._hasNormals
+
     def clone(self,fullClone = False):
         """
         :param fullClone: whether pos,rot etc should be cloned or not
@@ -244,6 +271,16 @@ class ModelObject(object):
                     glBindBuffer(GL_ARRAY_BUFFER, self._bufferId)
                     glBufferData(GL_ARRAY_BUFFER, self._data, self._type)
 
+            if self._updateNormals:
+                if self._normals is not None:
+                    if self._bufferNormals == -1:
+                        self._bufferNormals = long(glGenBuffers(1))
+                    glBindBuffer(GL_ARRAY_BUFFER, self._bufferNormals)
+                    glBufferData(GL_ARRAY_BUFFER, self._normals, self._type)
+                elif self._bufferNormals > 0:
+                    glDeleteBuffers(self._bufferNormals)
+                    self._bufferNormals = long(-1)
+                self._updateNormals = False
 
             if self._updateBuffer:
                 if self._elements is not None:
@@ -254,8 +291,6 @@ class ModelObject(object):
                 elif self._bufferIdElements > 0:
                     glDeleteBuffers(self._bufferIdElements)
                     self._bufferIdElements = long(-1)
-
-
 
             self._updateBuffer = False
 
@@ -276,8 +311,29 @@ class ModelObject(object):
                 raise RuntimeError("Buffer was already released.")
             try:
                 glBindBuffer(GL_ARRAY_BUFFER, self._bufferId)
-                if self._bufferIdElements > 0:
+                glEnableVertexAttribArray(0)
+                glVertexAttribPointer(
+                    0,
+                    3,
+                    GL_FLOAT,
+                    GL_FALSE,
+                    sizeof(c_float) * 3,
+                    None
+                )
+                if self._hasNormals:
+                    glBindBuffer(GL_ARRAY_BUFFER, self._bufferNormals)
+                    glEnableVertexAttribArray(1)
+                    glVertexAttribPointer(
+                        1,
+                        3,
+                        GL_FLOAT,
+                        GL_TRUE,
+                        sizeof(c_float) * 3,
+                        None
+                    )
+                if self.gl_shouldUseElem():
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,self._bufferIdElements)
+
             except Exception as e:
                 self._render = False
                 print e

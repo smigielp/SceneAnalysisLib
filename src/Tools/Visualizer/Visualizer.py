@@ -36,7 +36,7 @@ SIMPLE_SCENE = False
 class Visualizer(object):
     def __init__(self, vehicleTracked, shouldInitialize=False):
 
-        self.debug_OpenGL = False
+        self.debug_OpenGL = True
 
         self.dronePos = np.array([0, 0, -7])
 
@@ -86,7 +86,6 @@ class Visualizer(object):
         self._useCameraFromVehicle = False
 
         self.shader = None
-        self.uniforms = None
         self.buftest = None
         self.obj = None
 
@@ -144,8 +143,7 @@ class Visualizer(object):
 
         glClearColor(0.3, 0.3, 0.3, 0.0)
 
-        self.shader = Shader.loadShader()
-        self.uniforms = Shader.createUniformLocations(self.shader)
+        self.shader = Shader.getShaders()
 
         self.buftest = ModelObject(drawType='STATIC', modelType='LINES')
         self.buftest.data = self.verticies
@@ -244,35 +242,8 @@ class Visualizer(object):
     def render(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        glUseProgram(self.shader)
-        self.cameraC.update()
-        glUniformMatrix4fv(self.uniforms[0], 1, GL_FALSE, self.cameraC.P)
-        glUniformMatrix4fv(self.uniforms[1], 1, GL_TRUE, self.cameraC.V)
-        #  todo: add ambient light and normal light
-
-        #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-
-        glPointSize(8.0)
-        with self._modelsLock:
-            for model in self._regModels:
-                model.gl_buffer()
-                if model.gl_bind():
-                    glUniformMatrix4fv(self.uniforms[2], 1, GL_TRUE, model.modelMatrix)
-                    glUniform3f(self.uniforms[3], model.color[0], model.color[1], model.color[2])
-                    glEnableVertexAttribArray(0)
-                    glVertexAttribPointer(
-                        0,
-                        3,
-                        GL_FLOAT,
-                        GL_FALSE,
-                        sizeof(_float) * 3,
-                        None
-                    )
-                    if model.gl_shouldUseElem():
-                        glDrawElements(model.modelType, model.bufferSize,GL_UNSIGNED_INT,None)
-                    else:
-                        glDrawArrays(model.modelType, 0, model.bufferSize)
-                    glDisableVertexAttribArray(0)
+        self.renderWithShading()
+        self.renderNoShading()
 
         if self.debug_OpenGL:
             mess = get_debug_output()
@@ -286,6 +257,52 @@ class Visualizer(object):
     lastTime = -1
     deltaTime = 0
     updTime = 0
+
+    def renderWithShading(self):
+        glUseProgram(self.shader[0][0])
+        self.cameraC.update()
+        glUniformMatrix4fv(self.shader[0][1][0], 1, GL_FALSE, self.cameraC.P)
+        glUniformMatrix4fv(self.shader[0][1][1], 1, GL_TRUE, self.cameraC.V)
+
+        #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        glPointSize(8.0)
+
+        with self._modelsLock:
+            for model in self._regModels:
+                if not model.hasNormals:
+                    continue
+                model.gl_buffer()
+
+                if model.gl_bind():
+                    glUniform3f(self.shader[0][1][3], model.color[0], model.color[1], model.color[2])
+                    glUniformMatrix4fv(self.shader[0][1][2], 1, GL_TRUE, model.modelMatrix)
+                    if model.gl_shouldUseElem():
+                        glDrawElements(model.modelType, model.bufferSize,GL_UNSIGNED_INT,None)
+                    else:
+                        glDrawArrays(model.modelType, 0, model.bufferSize)
+                    glDisableVertexAttribArray(0)
+                    glDisableVertexAttribArray(1)
+
+    def renderNoShading(self):
+
+        glUseProgram(self.shader[1][0])
+        glUniformMatrix4fv(self.shader[1][1][0], 1, GL_FALSE, self.cameraC.P)
+        glUniformMatrix4fv(self.shader[1][1][1], 1, GL_TRUE, self.cameraC.V)
+
+        with self._modelsLock:
+            for model in self._regModels:
+                if model.hasNormals:
+                    continue
+                model.gl_buffer()
+
+                if model.gl_bind():
+                    glUniform3f(self.shader[1][1][3], model.color[0], model.color[1], model.color[2])
+                    glUniformMatrix4fv(self.shader[1][1][2], 1, GL_TRUE, model.modelMatrix)
+                    if model.gl_shouldUseElem():
+                        glDrawElements(model.modelType, model.bufferSize,GL_UNSIGNED_INT,None)
+                    else:
+                        glDrawArrays(model.modelType, 0, model.bufferSize)
+                    glDisableVertexAttribArray(0)
 
     def update(self):
         self.deltaTime = -1
@@ -325,7 +342,7 @@ class Visualizer(object):
 
         else:
             self.obj.render = False
-            # self.setDronePos(np.array([2.0, 2.0, 2.0]))
+
 
     class Camera(object):
         #todo: check if camera is really rotated by 180 deg
