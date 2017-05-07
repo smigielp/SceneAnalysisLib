@@ -732,18 +732,21 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
     #GnuplotDrawer.printVectorPicture([doubleRotatedVect], [[0, 781L], [0, 458L]])
     return [photoPoint, headingChange, secondPhotoPoint, secondHeadingChange, chosenEdge]
 
-def getNumpyArray(list):
+import numpy
+def getNumpyArray(list,type=numpy.float32):
     """
     :param array:   list
     :return:        numpy.array
     This function converts, if needed, container list to numpy.array
     """
-    import numpy
     if isinstance(list, numpy.ndarray):
         # its array not list so just return it
         return list
     else:
-        return numpy.array(list)
+        if type is None:
+            return numpy.array(list)
+        else:
+            return numpy.array(list,dtype=type)
 
 
 def getRepresentativePoint(polygon):
