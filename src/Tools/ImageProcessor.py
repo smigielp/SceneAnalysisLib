@@ -144,7 +144,7 @@ class ImageProcessor(object):
     def extractMainObjects(self, vectorPictureSet):
         vectorProjectionList = []
         for projection in vectorPictureSet:
-            shape = Utils.getLongestVertex(projection[0])
+            shape = Utils.getLongestLine(projection[0])
             angle = projection[1]
             # kierunek wektorow dla features odwrocony zeby zaznaczyc pusty obszar
             features = [feature for feature in projection[0] if feature != shape]

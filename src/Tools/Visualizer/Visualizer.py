@@ -130,7 +130,7 @@ class Visualizer(object):
     def initialize(self):
 
         glutInit()
-        glutInitWindowSize(640, 480)
+        glutInitWindowSize(960, 690)
         glutCreateWindow("Visualizer")
         glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE)
         glutDisplayFunc(self.render)
@@ -165,7 +165,7 @@ class Visualizer(object):
             self.registerModelObject(renObject)
             renObject.render = True
 
-            renObject.rotate(np.array([0.,230.,0.])) # <---- scene rotation
+            renObject.rotate(np.array([0.,180.,0.])) # <---- scene rotation
 
             if SIMPLE_SCENE:
                 if object.name != "RedBuilding" and object.name != "Ground" and not object.name.find("interior",0)>=0:
@@ -338,8 +338,8 @@ class Visualizer(object):
             self.isPosENU = False
             self.__lock = RLock()
 
-            self.width = 640
-            self.height = 480
+            self.width = 960
+            self.height = 690
 
             self.P = np.identity(4, float32)
             self.fieldOfView = 80.0
