@@ -231,6 +231,6 @@ def printPolygonCentroidSpectrum(spectrumList):
     gp('set style data histograms')
     gp('set style fill solid 1.0 border -1')
     gp('set ylabel "Distance from centroid"')
-    gp('set xlabel "Angle"')
+    gp('set xlabel "Angle step"')
     gp.plot(Gnuplot.PlotItems.Data(plotData))
     gnuPlots.append(gp)

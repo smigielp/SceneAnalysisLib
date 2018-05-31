@@ -5,7 +5,6 @@ from Tools import Utils
 from Vectorization.Vectorizer import Vectorizer
 import ConfigParser
 import ImageApi
-import cv2
 
 
 ###########################################################################################
@@ -24,14 +23,6 @@ import cv2
 # 2 - displaying intermediate pictures of vectorization process (including postprocessing)
 # 3 - printing bitmap array [1, 0] on standard output
 #
-
-
-# Colors used for selective object extraction during vectorization
-RED     = "RED"
-BLUE    = "BLUE"
-YELLOW  = "YELLOW"
-MAGENTA = "MAGENTA"
-
 
 
 class ImageProcessor(object):
@@ -67,14 +58,16 @@ class ImageProcessor(object):
     # 3) creates dense sequence of points on object border
     # 4) removes redundant points from border
     #
-    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img), color=None):        
+    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img), imageColorExtract=(lambda img: img), color=None):        
         self.domain = [[0, inputImage.shape[1]], [0, inputImage.shape[0]]]
         self.domain3D = [[0, inputImage.shape[0]]] + self.domain       
         
         self.vectorizer.domain = self.domain
         self.vectorizer.domain3D = self.domain3D
                 
-        image = imagePreprocess(inputImage, color)
+        inputImage = imagePreprocess(inputImage)
+        
+        image = imageColorExtract(inputImage, color)
         
         # Rotation is necessary as the imageCV object has starting point in lower left corner
         # but the algorithms used later read image from upper left corner row-by-row
@@ -87,12 +80,10 @@ class ImageProcessor(object):
             GnuplotDrawer.printMultiPointPicture(borderPoints, self.domain)   
         
         imageSizeFactor = (self.domain[0][1] + self.domain[1][1]) / 2
-        #outlierDist = imageSizeFactor * self.outlierDistance
-        outlierDist = self.windowSize
         closeEdgesDist = imageSizeFactor * self.closeEdgesDistance 
         
         # Remove redundant points from objects contours
-        smoothVectors = self.vectorizer.makeSmooth(borderPoints, outlierDist)
+        smoothVectors = self.vectorizer.makeSmooth(borderPoints, self.outlierDistance)
         
         smoothVectors = self.vectorizer.vectorPostProcessing(smoothVectors,
                                                combThreshold=closeEdgesDist,

@@ -15,20 +15,25 @@ from VideoCapture import Device
 #
 
 
-# BGR (Blue, Green, Red)
+# Colors used for selective object extraction during vectorization
+RED     = "RED"
+BLUE    = "BLUE"
+YELLOW  = "YELLOW"
+MAGENTA = "MAGENTA"
+
+# BGR (Blue, Green, Red) ranges of selected colors
 COLOR_BOUNDARY = {
-        "RED"        : ([0, 0, 30], [60, 60, 255]),
-        "BLUE"       : ([80, 0, 0], [255, 100, 100]),
-        "YELLOW"     : ([0, 30, 30], [60, 255, 255]),
-        "MAGENTA"    : ([100, 0, 100], [230, 80, 230])
-    }
+     "RED"        : ([0, 0, 150], [150, 100, 255])
+    ,"BLUE"       : ([150, 0, 0], [255, 150, 20])
+    ,"YELLOW"     : ([0, 80, 80], [60, 255, 255])
+    #,"MAGENTA"    : ([100, 0, 100], [230, 80, 230])
+}
 
 
 class Filter(object):
 
     def __init__(self, debugLevel=0):
         self.debugLevel = debugLevel
-        pass
     
     ###############################################################################################
     # extracting red color from image and writing new image in the input image
@@ -140,12 +145,26 @@ class Filter(object):
 
 
     #############################################################################################
-    # 1) extracts given color
-    # 2) smoothen image image
-    # 3) applies bordering algorithm
+    # Image pre-processing 
     #
-    def prepareImage(self, inputImage, color):        
-        image = cv2.bilateralFilter(inputImage, 11, 90, 90)
+    def imagePreprocess(self, inputImage):    
+        image = inputImage            
+        #image = cv2.bilateralFilter(inputImage, 11, 90, 90)
+        
+        image = cv2.medianBlur(image, 11)  
+        #image = cv2.GaussianBlur()
+        
+        #self.showImage(image) 
+        
+        return image
+
+
+    #############################################################################################
+    # 1) extracts given colors
+    # 2) applies edge detection algorithm
+    #
+    def imageEdgeDetect(self, inputImage, color=None):    
+        image = inputImage                  
         # Extracting all colors
         if color is None:
             for i, selectedColor in enumerate(COLOR_BOUNDARY.keys()):
@@ -183,12 +202,11 @@ class Filter(object):
                     
                     mask = cv2.inRange(image, lower, upper)
                     image = cv2.bitwise_and(image, image, mask = mask)
-                    break
-                     
-        #image = cv2.medianBlur(image, 5)        
-        image = cv2.Canny(image, 80, 200)        
+                    break     
+        self.showImage(image)           
+        image = cv2.Canny(image, 100, 150, 11)        
         return image
-
+    
 
 ###############################################################################################
 # For use with laptop web camera

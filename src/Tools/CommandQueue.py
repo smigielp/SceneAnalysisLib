@@ -106,8 +106,14 @@ class CommandQueue(object):
     def confirm(self):
         if self._isExecuting:
             raise RuntimeError("Sent new commands while queue is already executing")
-        localFrame = self._vehicle.quad.location.local_frame
-        self._startpos = [localFrame.east, localFrame.north, -localFrame.down]
+        
+        #localFrame = self._vehicle.quad.location.local_frame
+        localFrame = self._vehicle.getPositionVector()
+        
+        # ERROR - corrected
+        # self._startpos = [localFrame.east, localFrame.north, -localFrame.down]
+        # TypeError: bad operand type for unary -: 'NoneType'
+        self._startpos = localFrame
         self._startangle = [float(self._vehicle.quad.heading), 0., 0.]
         self._executeQueue()
         return
@@ -167,7 +173,7 @@ class CommandQueue(object):
     def visitPoints(self, points = np.array([]), relativeToStartingPos = False,relativeNextShift = False, callbackOnVisited = None,
                     ignoreCallbackResult = False, callbackArg = None):
 
-        #relativeNextShift - wether points are vectors by which vehicle has to move each time
+        #relativeNextShift - whether points are vectors by which vehicle has to move each time
         if relativeNextShift:
             delta = points[0]
             for i in range(1,len(points)):
@@ -176,7 +182,7 @@ class CommandQueue(object):
                 points[i] += delta
                 delta +=temp
 
-        #relativeToStartingPos - wether points has to be shifted by starting pos of vehicle
+        #relativeToStartingPos - whether points has to be shifted by starting pos of vehicle
         if relativeToStartingPos:
             startPos = self._vehicle.getPositionVector()
             for i in range(0,len(points)):
@@ -194,7 +200,7 @@ class CommandQueue(object):
             currPos = self._vehicle.getPositionVector()
             deltaPos = point - currPos
             #if deltaPos[2] != 0:
-             #   dalt = deltaPos[2]
+            #   dalt = deltaPos[2]
             self.goto(deltaPos[1],deltaPos[0],deltaPos[2],True)
             self.confirm()
             i += 1
@@ -243,6 +249,9 @@ class CommandQueue(object):
                 if m.isAbsolute[0]:
                     targetPos[0] = m.deltaArg[0]
                 else:
+                    # ERROR
+                    # targetPos[0] += m.deltaArg[0]
+                    # TypeError: unsupported operand type(s) for +=: 'NoneType' and 'float'
                     targetPos[0] += m.deltaArg[0]
                 if m.isAbsolute[1]:
                     targetPos[1] = m.deltaArg[1]

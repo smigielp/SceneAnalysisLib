@@ -27,7 +27,7 @@ class ModelBuilder3D:
             
     
     def create3DStructure(self, projectionSet):        
-        projectionSet.standardiseMainProjections()
+        transformedDomain = projectionSet.standardiseMainProjections()
         top = projectionSet.top
         front = projectionSet.front
         right = projectionSet.right
@@ -35,10 +35,10 @@ class ModelBuilder3D:
         print '------------------------'
         print right
         print top
-        GnuplotDrawer.printArrowPicture([top], [[-500, 500], [-500, 500]])
+        GnuplotDrawer.printArrowPicture([top], [[0, 400], [0, 400]])
 
-        GnuplotDrawer.printArrowPicture([front], [[-500, 500], [-500, 500]])
-        GnuplotDrawer.printArrowPicture([right], [[-500, 500], [-500, 500]])
+        GnuplotDrawer.printArrowPicture([front], [[0, 400], [0, 400]])
+        GnuplotDrawer.printArrowPicture([right], [[0, 400], [0, 400]])
                 
         x = self.x
         y = self.y
@@ -119,7 +119,7 @@ class ModelBuilder3D:
         
         projectionSet.sweepFeatures()          
         
-        shapeStructure = ShapeStructure([], self.domain3D)
+        shapeStructure = ShapeStructure([], transformedDomain)
         shapeStructure.addWall(top, wallsByTop, None, projectionSet.topSweepedFeatures)
         for proj in projectionSet.wallsProjections:
             if proj[2] == 0:
@@ -200,9 +200,9 @@ class ModelBuilder3D:
             # wybor dla plaszczyzny rzutowania wspolrzednej dla ktorej rzut bedzie 'wiekszy' (czyli glebokosc odcinka refA <-> refB mniejsza)
             # if abs(refA[varDim1] - refB[varDim1]) > abs(refA[varDim2] - refB[varDim2]):
             if abs(refA[varDim1[0]] - refB[varDim1[0]]) > abs(refA[varDim2[0]] - refB[varDim2[0]]):
-                cross = utl.getVertexCrossing2(wallsFromProj1, wallsFromProj2, varDim1[1], constDim, varDim2[1])
+                cross = utl.getPolygonCrossing2(wallsFromProj1, wallsFromProj2, varDim1[1], constDim, varDim2[1])
             else:
-                cross = utl.getVertexCrossing2(wallsFromProj1, wallsFromProj2, varDim2[1], constDim, varDim1[1])
+                cross = utl.getPolygonCrossing2(wallsFromProj1, wallsFromProj2, varDim2[1], constDim, varDim1[1])
             
             if cross != []:
                 walls3D.extend(cross)

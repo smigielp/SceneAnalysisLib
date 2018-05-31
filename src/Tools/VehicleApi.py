@@ -21,9 +21,9 @@ DOWN  = 0
 MAX_WAIT_FOR_MODE = 5
 
 class QuadcopterApi(object):
-    def __init__(self, connectString='127.0.0.1:14550'):
-        print datetime.now(), '- connecting to vehicle...'
-        self.quad = connect(connectString, wait_ready=True)
+    def __init__(self, connectString='com4', baudRate=57600):
+        print datetime.now(), '- connecting to vehicle at ', connectString, ', baud rate: ', baudRate
+        self.quad = connect(connectString, baud=baudRate, wait_ready=True)
         self.getState()
         self.commandQueue = CommandQueue(self)
         self.printCommand = True
@@ -66,17 +66,28 @@ class QuadcopterApi(object):
         end[2] = up
         return end
 
-    def getPositionVector(self):
+    def getLocalPositionVector(self):
         """
         :return:    vector [east,north,up] of position in space or None if vehicle isn't in valid position
-        """
+        """        
         localFrame = self.quad.location.local_frame
         if localFrame.east is None or localFrame.north is None or localFrame.down is None:
             return None
         position = np.array([localFrame.east, localFrame.north, -localFrame.down])
 
         return position
+    
+    
+    def getPositionVector(self):
+        """
+        :return:    vector [east,north,up] of position in space or None if vehicle isn't in valid position
+        """        
+        globalFrame = self.quad.location.global_relative_frame
+        if globalFrame.lat is None or globalFrame.lon is None or globalFrame.alt is None:
+            return None
+        position = np.array([globalFrame.lon, globalFrame.lat, globalFrame.alt])
 
+        return position
         
     def getState(self):
         print "  > armed    : ", self.quad.armed

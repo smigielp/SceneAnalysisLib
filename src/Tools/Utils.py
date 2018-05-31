@@ -39,6 +39,7 @@ def getPointToPolygonDist(point, polygon):
     pt = Point(point)
     return pt.distance(vtx)
 
+
 def getPointToPolygonFarDist(point, polygon):
     dist = 0
     for pt in polygon:
@@ -668,13 +669,13 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
         Y = [rotatedVect[k][1] for k in range(len(rotatedVect))]
         currentArea = (max(X) - min(X)) * (max(Y) - min(Y))
         if currentArea < minArea:
-            point=[(max(X) + min(X))/2, (math.fabs((max(X) + min(X))/2) / math.tan(math.radians(lensAngleH/2))) * 1.2]
+            point=[(max(X) + min(X))/2, (math.fabs((max(X) + min(X))/2) / math.tan(math.radians(lensAngleH/2))) * 1.7]
             for apex in rotatedVect:
-                if apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.2 > point [1]:
-                    point[1]= apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.2
+                if apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.7 > point [1]:
+                    point[1]= apex[1] + math.fabs(point[0]-apex[0]) / math.tan(math.radians(lensAngleH/2)) * 1.7
 
-            if max(Y) + relativeBuildingHeight * photoHeightRatio /math.tan(math.radians(lensAngleV/2)) * 1.2 > point[1]:
-                point[1] = max(Y) + relativeBuildingHeight * photoHeightRatio /math.tan(math.radians(lensAngleV/2)) * 1.2
+            if max(Y) + relativeBuildingHeight * photoHeightRatio /math.tan(math.radians(lensAngleV/2)) * 1.7 > point[1]:
+                point[1] = max(Y) + relativeBuildingHeight * photoHeightRatio /math.tan(math.radians(lensAngleV/2)) * 1.7
 
             point=[point[0] * math.cos(-angle) - point[1] * math.sin(-angle), point[1] * math.cos(-angle) + point[0] * math.sin(-angle)]
             point=[point[0] + center[0], point[1]+ center[1]]
@@ -688,16 +689,16 @@ def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, 
 
             if not collision:
                 x=(max([doubleRotatedVect[k][0] for k in range(len(doubleRotatedVect))]) + min([doubleRotatedVect[k][0] for k in range(len(doubleRotatedVect))]))/2
-                point1=[x,math.fabs(x) / math.tan(math.radians(lensAngleH/2)) * 1.2]
+                point1=[x,math.fabs(x) / math.tan(math.radians(lensAngleH/2)) * 1.7]
                 #point2=[x, -math.fabs(x) / math.tan(math.radians(lensAngleH/2))) * 1.2]
                 for apex in doubleRotatedVect:
-                    if apex[1] + math.fabs(point1[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2 > point1[1]:
-                        point1[1] = apex[1] + math.fabs(point1[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2
+                    if apex[1] + math.fabs(point1[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.7 > point1[1]:
+                        point1[1] = apex[1] + math.fabs(point1[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.7
                     # if apex[1] - math.fabs(point2[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2 < point2[1]:
                     #     point2[1] = apex[1] - math.fabs(point2[0] - apex[0]) / math.tan(math.radians(lensAngleH / 2)) * 1.2
 
-                if max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight * photoHeightRatio / math.tan(math.radians(lensAngleV / 2)) * 1.2 > point1[1]:
-                    point1[1] = max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight * photoHeightRatio / math.tan(math.radians(lensAngleV / 2)) * 1.2
+                if max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight * photoHeightRatio / math.tan(math.radians(lensAngleV / 2)) * 1.7 > point1[1]:
+                    point1[1] = max([doubleRotatedVect[k][1] for k in range(len(doubleRotatedVect))]) + relativeBuildingHeight * photoHeightRatio / math.tan(math.radians(lensAngleV / 2)) * 1.7
 
                 point1 = [point1[0] * math.cos(math.pi / 2 - angle) - point1[1] * math.sin(math.pi / 2 - angle), point1[1] * math.cos(math.pi / 2 - angle) + point1[0] * math.sin(math.pi / 2 - angle)]
                 # point1 = [point1[0] * math.cos(angle) - point1[1] * math.sin(angle),

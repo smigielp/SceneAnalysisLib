@@ -37,6 +37,7 @@ class ProjectionSet(object):
     def standardiseMainProjections(self):        
         topMaxY = utl.getMaxPoint(self.top, 1)[1]
         frontMinY = utl.getMinPoint(self.front, 1)[1]
+        frontMaxY = utl.getMaxPoint(self.front, 1)[1]
         rightMaxX = utl.getMaxPoint(self.right, 0)[0]
         rightMinY = utl.getMinPoint(self.right, 1)[1]
         rightMinX = utl.getMinPoint(self.right, 0)[0]
@@ -50,20 +51,43 @@ class ProjectionSet(object):
         topHeight = topMaxY - topMinY
         
         rightWidth = rightMaxX - rightMinX        
-        scaleRight = topHeight / rightWidth
-        
         frontWidth = frontMaxX - frontMinX
-        topWidth = topMaxX - topMinX
+        frontHeight = frontMaxY - frontMinY
+        topWidth = topMaxX - topMinX     
+         
+        scaleRight = topHeight / rightWidth
         scaleFront = topWidth / frontWidth    
         
-        # normalizacja rzutow by odpowiadaly sobie skala i polozeniem 
+        # normalizacja rzutow by odpowiadaly sobie skala i polozeniem q    
         for pt in self.front:
             pt[0] = (pt[0] - frontMinX) * scaleFront + topMinX 
-            
+                        
         for pt in self.right:
             pt[0] = (pt[0] - rightMinX) * scaleRight + topMinY  
             pt[1] = (pt[1] - rightMinY) * scaleRight + frontMinY 
+            
+        # skalowanie wysokosci frontu wzgledem wysokosci przeskalowanego prawego rzutu
+        rightMinY = utl.getMinPoint(self.right, 1)[1]
+        rightMaxY = utl.getMaxPoint(self.right, 1)[1]
+        rightHeight = rightMaxY - rightMinY
+        scaleFront2 = rightHeight / frontHeight    
+        for pt in self.front:
+            pt[1] = (pt[1] - frontMinY) * scaleFront2 + rightMinY 
      
+     
+        frontMin = utl.getMinPoint(self.front, 0)
+        frontMax = utl.getMaxPoint(self.front, 0)
+        rightMin = utl.getMinPoint(self.right, 0)
+        rightMax = utl.getMaxPoint(self.right, 0)
+        domainX = [frontMin[0]-20, frontMax[0]+20]
+        domainZ = [frontMin[1]-20, frontMax[1]+20]
+        domainY = [rightMin[0]-20, rightMax[0]+20]
+        
+        domain = [domainX, domainY, domainZ]
+        print domain
+        
+        return domain
+        
              
     ########################################################################################
     # Procedura tymczasowa. Trzeba przerobic
@@ -81,7 +105,7 @@ class ProjectionSet(object):
         for proj in self.wallsProjections:
             features = proj[1]
             angle = proj[2]
-            topRotated = utl.rotateVertexByCenterPoint(self.top, topCenterPoint, -angle)
+            topRotated = utl.rotatePolygonByCenterPoint(self.top, topCenterPoint, -angle)
                                                 
             topMaxX = utl.getMaxPoint(topRotated, 0)[0]
             topMinX = utl.getMinPoint(topRotated, 0)[0]
@@ -105,7 +129,7 @@ class ProjectionSet(object):
                 for i in range(len(sweeped.sideWalls)):
                     # print '-------'
                     # print wall
-                    sweeped.sideWalls[i] = utl.rotateVertexByCenterPoint(sweeped.sideWalls[i], topCenterPoint, angle)
+                    sweeped.sideWalls[i] = utl.rotatePolygonByCenterPoint(sweeped.sideWalls[i], topCenterPoint, angle)
                     # print wall
                 sweepedFeatures.append(sweeped)
             proj.append(sweepedFeatures)
@@ -229,7 +253,7 @@ class GraphStructure(object):
             dist = 1000000
             for nbr in self.objectSet:
                 if nbr != obj:
-                    tmpDist = Utils.getPointToVertexDist(center, nbr)
+                    tmpDist = Utils.getPointToPolygonDist(center, nbr)
                     if tmpDist < dist:
                         closest = nbr
                         dist = tmpDist
@@ -241,7 +265,7 @@ class GraphStructure(object):
             # remove end
             for idx, nbr in enumerate(self.objectSet):
                 if nbr != obj:
-                    if Utils.getPointToVertexDist(center, nbr) < Utils.getPointToVertexFarDist(center, closest):
+                    if Utils.getPointToPolygonDist(center, nbr) < Utils.getPointToPolygonFarDist(center, closest):
                         neighbourList.append([nbr, Utils.getCentroid(nbr), idx])
             
             self.objectGraph.append([[obj, center], neighbourList])  
