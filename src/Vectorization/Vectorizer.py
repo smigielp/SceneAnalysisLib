@@ -151,7 +151,10 @@ class Vectorizer(object):
         index = 0
         end = len(pointList)-1
         for i in range(1, end - 1):
-            d = Utils.getPointToLineDist(pointList[0], pointList[end], pointList[i])
+            try:
+                d = Utils.getPointToLineDist(pointList[0], pointList[end], pointList[i])
+            except:
+                print "Error calculating distance. Incorrect parameters."
             if d > dmax:
                 index = i
                 dmax = d
@@ -170,14 +173,15 @@ class Vectorizer(object):
     
        
     
-    def vectorPostProcessing(self, lines, combThreshold=8, straightThreshold=5, angleThreshold=0.05, postProcLevel=4):
+    def vectorPostProcessing(self, lines, combThreshold=8, straightThreshold=5, angleThreshold=0.05, areaThreshold=50, postProcLevel=4):
         if postProcLevel > 0:
-            self.combineCloseVectors(lines, combThreshold)
-            self.combineVectorsOnSingleLine(lines, angleThreshold)
-            if self.debugLevel > 1:
-                GnuplotDrawer.printVectorPicture(lines, self.domain)       
+            self.combineCloseVectors(lines, combThreshold)           
+            self.removeSmallArtifacts(lines, areaThreshold)
+            #if self.debugLevel > 1:
+            #    GnuplotDrawer.printVectorPicture(lines, self.domain)       
         if postProcLevel > 1:
             self.straightenVectors(lines, straightThreshold)
+            self.combineVectorsOnSingleLine(lines, angleThreshold) 
         return lines
     
     
@@ -186,51 +190,61 @@ class Vectorizer(object):
     #      - checks only if first and last point are close (without intermediate points)
     def combineCloseVectors(self, lines, threshold):
         i = 0
-        for line in lines:
-            if len(line) > 2 and Utils.getDistance(line[0], line[-1]) < threshold:
-                line.append(deepcopy(line[0]))
         while i < len(lines):
             line1 = lines[i]
-            if line1[0] == line1[-1] or len(line1) < 1:
-                i += 1
-                continue
             j = i + 1
-            wasCombined = False
+            minDist = threshold
+            minDistLine = None
+            line1Connect = None
+            line2Connect = None
             while j < len(lines):
                 line2 = lines[j]
-                if line2[0] == line2[-1] or len(line2) < 1:
+                # omitting empty or closed polygons
+                if line2[0] == line2[-1] or len(line2) <= 1:
                     j += 1
-                    continue
-                if Utils.getDistance(line1[0], line2[0]) < threshold:
-                    # Attaching reversed line2 to the beginning of line1
-                    line2.reverse()
-                    line1 = line2 + line1
-                    lines[i] = line1
-                    lines.pop(j)
-                    wasCombined = True
-                elif Utils.getDistance(line1[0], line2[-1]) < threshold:
-                    # Attaching line2 to the beginning of line1
-                    line1 = line2 + line1
-                    lines[i] = line1
-                    lines.pop(j)
-                    wasCombined = True
-                elif Utils.getDistance(line1[-1], line2[0]) < threshold:
-                    # Attaching line2 to the end of line1
-                    line1 = line1 + line2
-                    lines[i] = line1
-                    lines.pop(j)
-                    wasCombined = True
-                elif Utils.getDistance(line1[-1], line2[-1]) < threshold:
-                    # Attaching reversed line2 to the end of line1
-                    line2.reverse()
-                    line1 = line1 + line2
-                    lines[i] = line1
-                    lines.pop(j)
-                    wasCombined = True
+                    continue            
+                distance = Utils.getDistance(line1[0], line2[-1])
+                if distance < minDist:
+                    minDist = distance
+                    minDistLine = j
+                    line1Connect = 0
+                    line2Connect = -1
+                distance = Utils.getDistance(line1[-1], line2[0])
+                if distance < minDist:
+                    minDist = distance
+                    minDistLine = j
+                    line1Connect = -1
+                    line2Connect = 0
+                distance = Utils.getDistance(line1[0], line2[0])
+                if distance < minDist:
+                    minDist = distance
+                    minDistLine = j
+                    line1Connect = 0
+                    line2Connect = 0
+                distance = Utils.getDistance(line1[-1], line2[-1])
+                if distance < minDist:
+                    minDist = distance
+                    minDistLine = j
+                    line1Connect = -1
+                    line2Connect = -1                   
                 j += 1
             # Switching to the next line only if nothing could be matched
-            if not wasCombined:
-                i += 1     
+            if minDistLine is not None:
+                line2 = lines[minDistLine]
+                if line1Connect == 0 and line2Connect == -1:
+                    line1 = line2 + line1
+                elif line1Connect == -1 and line2Connect == 0:
+                    line1 = line1 + line2
+                elif line1Connect == 0 and line2Connect == 0:
+                    line2.reverse()
+                    line1 = line2 + line1
+                elif line1Connect == -1 and line2Connect == -1:
+                    line2.reverse()
+                    line1 = line1 + line2
+                lines[i] = line1
+                lines.pop(minDistLine)
+            else:
+                i += 1
         # Closing the opened vertices
         for i in range(len(lines)):
             if Utils.getDistance(lines[i][0], lines[i][-1]) < threshold:
@@ -280,8 +294,7 @@ class Vectorizer(object):
                         # print line[i], line[i+1], ' -> ', angle1
                         # print line[i], line[j], ' -> ', angle2
                         # print '------'
-                    j += 1
-                
+                    j += 1                
                 
                 lines[x] = [line[i] for i in range(len(line)) if i not in ptsToRemove]
                 # Checking if first and last vector lies on single line
@@ -291,3 +304,18 @@ class Vectorizer(object):
                     lines[x].pop()
                     lines[x][0] = deepcopy(lines[x][-1])
             x += 1                
+
+
+    def removeSmallArtifacts(self, lines, threshold):
+        x = 0
+        while x < len(lines):
+            polygon = lines[x]
+            if abs(Utils.getPolygonArea(polygon)) < threshold:
+                lines.pop(x)
+            else:
+                x += 1
+                
+
+vect = Vectorizer()
+lines = vect.makeSmoothRDP([[[0,0], [0,2], [0,4]]], 5)
+print lines

@@ -21,13 +21,16 @@ BLUE    = "BLUE"
 YELLOW  = "YELLOW"
 MAGENTA = "MAGENTA"
 
-# BGR (Blue, Green, Red) ranges of selected colors
+# HSV (Hue, Saturation, Value)
 COLOR_BOUNDARY = {
-     "RED"        : ([0, 0, 150], [150, 100, 255])
-    ,"BLUE"       : ([150, 0, 0], [255, 150, 20])
-    ,"YELLOW"     : ([0, 80, 80], [60, 255, 255])
-    #,"MAGENTA"    : ([100, 0, 100], [230, 80, 230])
+     "RED"        : [[[0, 150, 80], [12, 255, 255]], [[168, 150, 80], [180, 255, 255]]]
+    ,"BLUE"       : [[[90, 80, 150], [130, 255, 255]]]
+    ,"YELLOW"     : [[[0, 0, 150], [180, 50, 255]], [[20, 50, 150], [40, 255, 255]]]
+    #,"YELLOW"     : [[[15, 50, 150], [45, 255, 255]]]
+    #,"MAGENTA"    : [[[100, 0, 100], [230, 80, 230]]]
 }
+
+MEDIAN_BLUR = 9
 
 
 class Filter(object):
@@ -106,8 +109,8 @@ class Filter(object):
         return newImagecv
                
     
-    def showImage(self, imagecv):
-        cv2.imshow("image", imagecv)
+    def showImage(self, imagecv, name="image"):
+        cv2.imshow(name, imagecv)
         cv2.waitKey()
     
         
@@ -151,11 +154,17 @@ class Filter(object):
         image = inputImage            
         #image = cv2.bilateralFilter(inputImage, 11, 90, 90)
         
-        image = cv2.medianBlur(image, 11)  
-        #image = cv2.GaussianBlur()
+        #Median Blur
+        image = cv2.medianBlur(image, MEDIAN_BLUR)
         
-        #self.showImage(image) 
+        #Gamma Enhancing  
+        gamma = 0.5
+        invGamma = 1.0 / gamma
+        table = numpy.array([((i / 255.0) ** invGamma) * 255
+                             for i in numpy.arange(0, 256)]).astype("uint8") 
+        image = cv2.LUT(image, table)
         
+        #image = cv2.GaussianBlur()                
         return image
 
 
@@ -165,45 +174,57 @@ class Filter(object):
     #
     def imageEdgeDetect(self, inputImage, color=None):    
         image = inputImage                  
+        hsvImage = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         # Extracting all colors
         if color is None:
-            for i, selectedColor in enumerate(COLOR_BOUNDARY.keys()):
-                lower = COLOR_BOUNDARY[selectedColor][0]
-                upper = COLOR_BOUNDARY[selectedColor][1]
-                
-                lower = numpy.array(lower, dtype = "uint8")
-                upper = numpy.array(upper, dtype = "uint8")
-                
-                mask = cv2.inRange(image, lower, upper)
-                tmpImage = cv2.bitwise_and(image, image, mask = mask)
-                if i == 0:
-                    newImage = tmpImage
-                else:
-                    newImage = cv2.add(newImage, tmpImage)
-            image = newImage
+            fullMask = None
+            for selectedColor in COLOR_BOUNDARY.keys():
+                for range in COLOR_BOUNDARY[selectedColor]:
+                    lower = numpy.array(range[0])
+                    upper = numpy.array(range[1])
+                    
+                    mask = cv2.inRange(hsvImage, lower, upper)
+                    if fullMask is None:
+                        fullMask = mask
+                    else:
+                        fullMask = fullMask + mask 
+            image = fullMask     
+            #image = newImage 
         # Extracting particular color from list
-        elif color in COLOR_BOUNDARY.keys():       
-            lower = COLOR_BOUNDARY[color][0]
-            upper = COLOR_BOUNDARY[color][1]
-            
-            lower = numpy.array(lower, dtype = "uint8")
-            upper = numpy.array(upper, dtype = "uint8")
-            
-            mask = cv2.inRange(image, lower, upper)
-            image = cv2.bitwise_and(image, image, mask = mask)
+        elif color in COLOR_BOUNDARY.keys():
+            fullMask = None       
+            for range in COLOR_BOUNDARY[color]:     
+                lower = numpy.array(range[0], dtype = "uint8")
+                upper = numpy.array(range[1], dtype = "uint8")
+                
+                mask = cv2.inRange(hsvImage, lower, upper)
+                #self.showImage(mask)
+                if fullMask is None:
+                    fullMask = mask  
+                else:
+                    fullMask = fullMask + mask
+            image = fullMask
         # Extracting objects having similar color to given one (in BGR)
         else:
+            found = False
             for selectedColor in COLOR_BOUNDARY.keys():
-                lower = COLOR_BOUNDARY[selectedColor][0]
-                upper = COLOR_BOUNDARY[selectedColor][1]
-                if color > lower and color < upper:      
-                    lower = numpy.array(lower, dtype = "uint8")
-                    upper = numpy.array(upper, dtype = "uint8")
-                    
-                    mask = cv2.inRange(image, lower, upper)
-                    image = cv2.bitwise_and(image, image, mask = mask)
-                    break     
-        self.showImage(image)           
+                for range in COLOR_BOUNDARY[selectedColor]: 
+                    if color > range[0] and color < range[1]: 
+                        found = True     
+                        break
+                if found:  
+                    fullMask = None  
+                    for range in COLOR_BOUNDARY[selectedColor]:
+                        lower = numpy.array(range[0], dtype = "uint8")
+                        upper = numpy.array(range[1], dtype = "uint8")                    
+                        mask = cv2.inRange(hsvImage, lower, upper)
+                        if fullMask is None:
+                            fullMask = mask
+                        else:
+                            fullMask = fullMask + mask
+                    image = fullMask
+                    break
+        self.showImage(image, "before edging")           
         image = cv2.Canny(image, 100, 150, 11)        
         return image
     
@@ -212,16 +233,15 @@ class Filter(object):
 # For use with laptop web camera
 class CameraApi(object):          
 
-    def __init__(self):
+    def __init__(self, device=1):
         try:
-            self.camera = cv2.VideoCapture(1)
+            self.camera = cv2.VideoCapture(device)
             if self.camera.isOpened():
                 print "Camera active."
             else:
                 print "Camera could not be activated."
         except:
             print "Error opening video capture."
-        self.filter = Filter()
     
     def isOpened(self):
         return self.camera.isOpened()
@@ -231,7 +251,6 @@ class CameraApi(object):
             ret, frame = self.camera.read()
         except:
             print "Error getting frame from camera."
-        #self.filter.showPicture(frame)
         return frame
     
     def stopCapture(self):
@@ -261,9 +280,10 @@ class CameraApi2(object):
         try:
             PILframe = self.camera.getImage()
             imagecv = cv2.cvtColor(numpy.array(PILframe), cv2.COLOR_BGR2RGB)
+            return imagecv
         except:
             print "Error getting frame from camera."
-        return imagecv
+        return None
     
     def stopCapture(self):
         try:

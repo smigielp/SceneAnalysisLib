@@ -361,40 +361,28 @@ class Vectorizer(object):
                 if line2[0] == line2[-1] or len(line2) < 1:
                     j += 1
                     continue
-                if Utils.getDistance(line1[0], line2[0]) < threshold:
-                    # Attaching reversed line2 to the beginning of line1
-                    # middlePoint = Utils.getMiddlePoint(line1[0], line2[0])
-                    # line1[0] = middlePoint
-                    line2.reverse()
-                    # line1 = line2[:-1] + line1
-                    line1 = line2 + line1
-                    lines[i] = line1
-                    lines.pop(j)
-                    wasCombined = True
-                elif Utils.getDistance(line1[0], line2[-1]) < threshold:
+                if Utils.getDistance(line1[0], line2[-1]) < threshold:
                     # Attaching line2 to the beginning of line1
-                    # middlePoint = Utils.getMiddlePoint(line1[0], line2[-1])
-                    # line1[0] = middlePoint
-                    # line1 = line2[:-1] + line1
                     line1 = line2 + line1
                     lines[i] = line1
                     lines.pop(j)
                     wasCombined = True
                 elif Utils.getDistance(line1[-1], line2[0]) < threshold:
                     # Attaching line2 to the end of line1
-                    # middlePoint = Utils.getMiddlePoint(line1[-1], line2[0])
-                    # line1[-1] = middlePoint
-                    # line1 = line1 + line2[1:]
                     line1 = line1 + line2
+                    lines[i] = line1
+                    lines.pop(j)
+                    wasCombined = True
+                elif Utils.getDistance(line1[0], line2[0]) < threshold:
+                    # Attaching reversed line2 to the beginning of line1
+                    line2.reverse()
+                    line1 = line2 + line1
                     lines[i] = line1
                     lines.pop(j)
                     wasCombined = True
                 elif Utils.getDistance(line1[-1], line2[-1]) < threshold:
                     # Attaching reversed line2 to the end of line1
-                    # middlePoint = Utils.getMiddlePoint(line1[-1], line2[-1])
-                    # line1[-1] = middlePoint
                     line2.reverse()
-                    # line1 = line1 + line2[1:]
                     line1 = line1 + line2
                     lines[i] = line1
                     lines.pop(j)
@@ -406,10 +394,9 @@ class Vectorizer(object):
         # Closing the opened vertices
         for i in range(len(lines)):
             if Utils.getDistance(lines[i][0], lines[i][-1]) < threshold:
-                # middlePoint = lines[i][0] 
                 middlePoint = Utils.getMiddlePoint(lines[i][0], lines[i][-1])  
                 lines[i][0] = deepcopy(middlePoint)
-                lines[i][-1] = deepcopy(middlePoint)
+                lines[i][-1] = deepcopy(middlePoint)         
     
     
     ############################################################################################

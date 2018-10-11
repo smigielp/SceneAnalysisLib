@@ -68,7 +68,7 @@ def setLabel(graph, pos, label, id=1):
 
 
 def printMultiPointPicture(mapToPrint, domain):
-    #gp = Gnuplot.Gnuplot(persist=0)
+    gp = Gnuplot.Gnuplot(persist=0)
     gp('set xrange [' + str(domain[0][0] - 1) + ':' + str(domain[0][1] + 1) + ']')
     gp('set yrange [' + str(domain[1][0] - 1) + ':' + str(domain[1][1] + 1) + ']')
     if len(domain) > 2:
@@ -103,6 +103,7 @@ def printVectorPicture(mapToPrint, domain):
     gnuPlots.append(gp)
     return gp
 
+
 def saveToFile(gnuPlot, name,imgSize = (400,300),path="debug/vecs/"):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -110,6 +111,7 @@ def saveToFile(gnuPlot, name,imgSize = (400,300),path="debug/vecs/"):
     gnuPlot("set output '"+path+name+".png'")
     gnuPlot("replot")
     gnuPlot("set term win")
+
 
 def printArrowPicture(mapToPrint, domain=None):   
     gp = Gnuplot.Gnuplot(persist=0) 

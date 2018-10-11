@@ -48,6 +48,7 @@ class ImageProcessor(object):
         # vector postprocessing parameters
         self.straightThreshold = self.config.getint(configFileSection, "straightThreshold")
         self.angleThreshold = self.config.getfloat(configFileSection, "angleThreshold")
+        self.areaThreshold = self.config.getfloat(configFileSection, "areaThreshold")
         self.postprocesLevel = self.config.getint(configFileSection, "postprocesLevel")
      
         
@@ -65,10 +66,13 @@ class ImageProcessor(object):
         self.vectorizer.domain = self.domain
         self.vectorizer.domain3D = self.domain3D
                 
-        inputImage = imagePreprocess(inputImage)
+        inputImage = imagePreprocess(inputImage)        
+        if self.debugLevel >= 2:
+            self.filter.showImage(inputImage)
         
         image = imageColorExtract(inputImage, color)
-        
+        if self.debugLevel >= 2:
+            self.filter.showImage(image)
         # Rotation is necessary as the imageCV object has starting point in lower left corner
         # but the algorithms used later read image from upper left corner row-by-row
         image = self.filter.rotateImage90Right(image)
@@ -76,34 +80,33 @@ class ImageProcessor(object):
         # Extract dense point sequence on the objects contours     
         borderPoints = self.vectorizer.getBorderPointSequence(image, Vectorizer.extractBorderedObject, windowSize=self.windowSize)
             
-        if self.debugLevel > 0: 
+        if self.debugLevel >= 3: 
             GnuplotDrawer.printMultiPointPicture(borderPoints, self.domain)   
         
-        imageSizeFactor = (self.domain[0][1] + self.domain[1][1]) / 2
-        closeEdgesDist = imageSizeFactor * self.closeEdgesDistance 
+        self.vectorizer.combineCloseVectors(borderPoints, self.closeEdgesDistance)           
+        self.vectorizer.removeSmallArtifacts(borderPoints, self.areaThreshold)
         
+        if self.debugLevel >= 3: 
+            GnuplotDrawer.printArrowPicture(borderPoints, self.domain)        
+            
         # Remove redundant points from objects contours
         smoothVectors = self.vectorizer.makeSmooth(borderPoints, self.outlierDistance)
         
-        smoothVectors = self.vectorizer.vectorPostProcessing(smoothVectors,
-                                               combThreshold=closeEdgesDist,
-                                               angleThreshold=self.angleThreshold,
-                                               postProcLevel=self.postprocesLevel) 
-
-        if self.debugLevel > 0:
+        if self.debugLevel >= 3: 
             GnuplotDrawer.printArrowPicture(smoothVectors, self.domain)
-                    
+                            
         # Check what precise colors are associated with vectorized objects
+        # Returning only those polygons which have an identified color
         colorTable = []
-        for object in smoothVectors:
-            point = Utils.getRepresentativePoint(object)
+        smoothVectorsFinal = []
+        for polygon in smoothVectors:
+            point = Utils.getRepresentativePoint(polygon)
             if point is not None:
                 pixelColor = [inputImage.item(int(-round(point[1])), int(round(point[0])), i) for i in range(3)]
-            else:
-                pixelColor = None
-            colorTable.append(pixelColor)
+                colorTable.append(pixelColor)
+                smoothVectorsFinal.append(polygon)                
                 
-        return {'vect':smoothVectors, 'domain':self.domain, 'color':colorTable}
+        return {'vect':smoothVectorsFinal, 'domain':self.domain, 'color':colorTable}
 
 
     

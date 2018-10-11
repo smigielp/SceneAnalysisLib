@@ -15,13 +15,14 @@ from datetime import datetime
 from CommandQueue import CommandQueue
 
 from Utils import getCentroid
+from __builtin__ import True
 
 FRONT = 1
 DOWN  = 0
 MAX_WAIT_FOR_MODE = 5
 
 class QuadcopterApi(object):
-    def __init__(self, connectString='com4', baudRate=57600):
+    def __init__(self, connectString='com3', baudRate=57600):
         print datetime.now(), '- connecting to vehicle at ', connectString, ', baud rate: ', baudRate
         self.quad = connect(connectString, baud=baudRate, wait_ready=True)
         self.getState()
@@ -29,6 +30,7 @@ class QuadcopterApi(object):
         self.printCommand = True
         self.printCommandStatus = True
         self.printCommandStatusChecks = True
+        
 
     def supressMessages(self,commands = None,commandsStatus = None,commandsChecks = None, all = None):
         if commands is not None:
@@ -164,7 +166,6 @@ class QuadcopterApi(object):
     
     
     def changeHeading(self, heading, relative=True):
-
         targetHeading = heading%360
         if relative:
             is_relative=1 #yaw relative to direction of travel
@@ -191,7 +192,8 @@ class QuadcopterApi(object):
             currentHeading = self.quad.heading
             if self.printCommandStatusChecks:
                 print datetime.now(), '- Current heading:  ', currentHeading
-            if abs(currentHeading - realTargetHeading) <= 2.0:
+            print "heading difference: ", abs(currentHeading - realTargetHeading)
+            if (currentHeading - realTargetHeading) % 360 <= 2.0 or (realTargetHeading - currentHeading) % 360 <= 2.0:
                 if self.printCommandStatus:
                     print datetime.now(), '- Heading set ', currentHeading
                 break
@@ -218,7 +220,7 @@ class QuadcopterApi(object):
         elif direction == DOWN:
             if self.printCommand:
                 print datetime.now(), '- Aiming camera down'
-            self.quad.gimbal.rotate(-10, 0, 0)
+            self.quad.gimbal.rotate(-8, 0, 0)
              
 
     def goto_position_relative(self, north, east, down=0):    

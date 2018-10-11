@@ -583,6 +583,11 @@ def scalePolygon(polygon, scale):
         polygon[i][1] = polygon[i][1] * scale
     return polygon
 
+def getPolygonArea(polygon):
+    if len(polygon) < 3:
+        return 0
+    shPolygon = Polygon(polygon)
+    return shPolygon.area
 
 ########################################################################################
 # [[object, center], [[neighbour1, center1], [neighbour2, center2]]]
@@ -608,7 +613,7 @@ def scaleGraphElement(iobject, scale):
         
 
 ########################################################################################
-# Skaluje element GraphStructure wraz z sasiadami
+# Obraca element GraphStructure wraz z sasiadami
 # [[object, center], [[neighbour1, center1], [neighbour2, center2]]]
 def rotateGraphElement(iobject, angle):
     iobject[0][0] = rotatePolygonByCenterPoint(iobject[0][0], [0, 0], angle)
@@ -616,14 +621,15 @@ def rotateGraphElement(iobject, angle):
         nbr[0] = rotatePolygonByCenterPoint(nbr[0], [0, 0], angle)
         nbr[1] = rotate2D(nbr[1], [0, 0], angle)
 
+
 def calcMoveToTargetHorizont(targetCoords, altitude, quadHeading, lensAngleV, lensAngleH,resolutionX=780,resolutionY=450):
     #lensAngleV/H in degrees
     movementVector=[]
     movementVector.append(2 * (targetCoords[0] - resolutionX / 2) * altitude * math.tan(math.radians(lensAngleH / 2)) / resolutionX)
     movementVector.append(2 * (targetCoords[1] - resolutionY / 2) * altitude * math.tan(math.radians(lensAngleV / 2)) / resolutionY)
     #changing the values according to quad heading
-    finaleMovementVector = [movementVector[0] * math.cos(-math.radians(quadHeading)) - movementVector[1] * math.sin(-math.radians(quadHeading)),movementVector[0] * math.sin(-math.radians(quadHeading)) + movementVector[1] * math.cos(-math.radians(quadHeading))]
-    return [finaleMovementVector[0], finaleMovementVector[1]]
+    finalMovementVector = [movementVector[0] * math.cos(-math.radians(quadHeading)) - movementVector[1] * math.sin(-math.radians(quadHeading)),movementVector[0] * math.sin(-math.radians(quadHeading)) + movementVector[1] * math.cos(-math.radians(quadHeading))]
+    return [finalMovementVector[0], finalMovementVector[1]]
 
 def calcHeadingChangeForFrontPhoto(vectors, map, photoAltitude, biuldingHeight, lensAngleH, lensAngleV, mapWidth=780, mapHeight=450, photoHeight=0.33):
     '''

@@ -6,13 +6,14 @@ import math
 
 ANGLE_STEP = 5
 
+
 def getObjectBorderSpectrum(vectorObject, angleStep=ANGLE_STEP):
     spectrumDict = {}
     i = 0
     while i < 360:
         spectrumDict[i] = []
         i = i + angleStep
-    print "===========", vectorObject
+    #print "===========", vectorObject
     centroid = Utils.getCentroid(vectorObject)
     
     #print spectrumDict
@@ -85,6 +86,7 @@ def getObjectBorderSpectrum(vectorObject, angleStep=ANGLE_STEP):
 ########################################################################################
 # Function checks if two representations given in distances from centroid to walls
 # describe similar shapes
+# patterns are results of getObjectBorderSpectrum function
 def comparePatterns(pattern1, pattern2, angleStep=ANGLE_STEP): 
     if len(pattern1) != len(pattern2):
         print "Error: inconsistent patterns - different ray count"
@@ -114,7 +116,8 @@ def comparePatterns(pattern1, pattern2, angleStep=ANGLE_STEP):
         if standardDev < meanProportion * 0.15:  
             # print dirChange1
             # print dirChange2
-            return {'scale': rayProportions[0], 'rotate': (pattern1[i][0] - pattern2[0][0]) * angleStep}   
+            #return {'scale': rayProportions[0], 'rotate': (pattern1[i][0] - pattern2[0][0]) * angleStep}
+            return {'scale': rayProportions[0], 'rotate': (pattern1[i][0] - pattern2[0][0])}   
     return None
     
     

@@ -5,7 +5,6 @@ from Tools import Utils
 from Vectorization.Vectorizer import Vectorizer
 import ConfigParser
 import ImageApi
-import cv2
 
 
 ###########################################################################################
@@ -25,6 +24,7 @@ import cv2
 # 3 - printing bitmap array [1, 0] on standard output
 #
 
+
 class ImageProcessor(object):
    
     def __init__(self, paramFile=None, configFileSection=None, inDebugLevel=0):                    
@@ -40,69 +40,85 @@ class ImageProcessor(object):
         
     def setAlgorithmsParameters(self, paramFile, configFileSection):
         self.config.read(paramFile)
-        self.erosionRepeat = self.config.getint(configFileSection, "erosionRepeat")
-        self.dilatationRepeat = self.config.getint(configFileSection, "dilatationRepeat")
-        self.imgResizeScale = self.config.getfloat(configFileSection, "imgResizeScale")        
-        # bordering parameters
-        self.luminusThreshold = self.config.getint(configFileSection, "luminusThreshold")  
+        self.imgResizeScale = self.config.getfloat(configFileSection, "imgResizeScale")    
         # vectorization parameters
         self.windowSize = self.config.getint(configFileSection, "windowSize")                 
         self.outlierDistance = self.config.getfloat(configFileSection, "outlierDistance")
         self.closeEdgesDistance = self.config.getfloat(configFileSection, "closeEdgesDistance")       
         # vector postprocessing parameters
         self.straightThreshold = self.config.getint(configFileSection, "straightThreshold")
+        self.angleThreshold = self.config.getfloat(configFileSection, "angleThreshold")
+        self.areaThreshold = self.config.getfloat(configFileSection, "areaThreshold")
         self.postprocesLevel = self.config.getint(configFileSection, "postprocesLevel")
-        
+     
         
     #############################################################################################
-    # Creates vector representation of distinctive shapes on PILImage picture
+    # Creates vector representation of distinctive shapes on given picture
     # 1) applies given pre-processing (function image Preprocess should include border extraction)
     # 2) mirrors image vertically
     # 3) creates dense sequence of points on object border
     # 4) removes redundant points from border
     #
-    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img)):
-        # type: (object, object) -> object
-        # type: (object, object) -> object
-        """
-
-        :rtype: object
-        """
+    def getVectorRepresentation(self, inputImage, imagePreprocess=(lambda img: img), imageColorExtract=(lambda img: img), color=None):        
         self.domain = [[0, inputImage.shape[1]], [0, inputImage.shape[0]]]
         self.domain3D = [[0, inputImage.shape[0]]] + self.domain       
-        
-        self.vectorizer.setParameters(self.windowSize)
         
         self.vectorizer.domain = self.domain
         self.vectorizer.domain3D = self.domain3D
                 
-        inputImage = imagePreprocess(inputImage)
+        inputImage = imagePreprocess(inputImage)        
+        if self.debugLevel >= 2:
+            self.filter.showImage(inputImage)
         
+        image = imageColorExtract(inputImage, color)
+        if self.debugLevel >= 2:
+            self.filter.showImage(image)
         # Rotation is necessary as the imageCV object has starting point in lower left corner
         # but the algorithms used later read image from upper left corner row-by-row
-        image = self.filter.rotateImage90Right(inputImage)
+        image = self.filter.rotateImage90Right(image)
                                                       
         # Extract dense point sequence on the objects contours     
-        borderPoints = self.vectorizer.getBorderPointSequence(image, Vectorizer.extractBorderedObject)
+        borderPoints = self.vectorizer.getBorderPointSequence(image, Vectorizer.extractBorderedObject, windowSize=self.windowSize)
             
-        if self.debugLevel > 0: 
+        if self.debugLevel >= 3: 
             GnuplotDrawer.printMultiPointPicture(borderPoints, self.domain)   
         
-        imageSizeFactor = (self.domain[0][1] + self.domain[1][1]) / 2
-        outlierDist = imageSizeFactor * self.outlierDistance
-        closeEdgesDist = imageSizeFactor * self.closeEdgesDistance 
+        self.vectorizer.combineCloseVectors(borderPoints, self.closeEdgesDistance)           
+        self.vectorizer.removeSmallArtifacts(borderPoints, self.areaThreshold)
         
+        if self.debugLevel >= 3: 
+            GnuplotDrawer.printArrowPicture(smoothVectors, self.domain)        
+            
         # Remove redundant points from objects contours
-        smoothVectors = self.vectorizer.makeSmooth(borderPoints, outlierDist)
+        smoothVectors = self.vectorizer.makeSmooth(borderPoints, self.outlierDistance)
         
-        smoothVectors = self.vectorizer.vectorPostProcessing(smoothVectors,
-                                               combThreshold=closeEdgesDist,
-                                               postProcLevel=self.postprocesLevel) 
-
-        if self.debugLevel > 0:
+        if self.debugLevel >= 3: 
             GnuplotDrawer.printArrowPicture(smoothVectors, self.domain)
-               
-        return {'vect':smoothVectors, 'domain':self.domain}
+        
+        '''
+        smoothVectors = self.vectorizer.vectorPostProcessing(smoothVectors,
+                                               combThreshold=self.closeEdgesDistance,
+                                               angleThreshold=self.angleThreshold,
+                                               areaThreshold=self.areaThreshold,
+                                               postProcLevel=self.postprocesLevel) 
+        '''
+            
+        if self.debugLevel >= 3:
+            GnuplotDrawer.printArrowPicture(smoothVectors, self.domain)
+                    
+        # Check what precise colors are associated with vectorized objects
+        # Returning only those polygons which have an identified color
+        colorTable = []
+        smoothVectorsFinal = []
+        for polygon in smoothVectors:
+            point = Utils.getRepresentativePoint(polygon)
+            if point is not None:
+                pixelColor = [inputImage.item(int(-round(point[1])), int(round(point[0])), i) for i in range(3)]
+                colorTable.append(pixelColor)
+                smoothVectorsFinal.append(polygon)                
+                
+        return {'vect':smoothVectorsFinal, 'domain':self.domain, 'color':colorTable}
+
 
     
     #############################################################################################
@@ -133,7 +149,7 @@ class ImageProcessor(object):
     def extractMainObjects(self, vectorPictureSet):
         vectorProjectionList = []
         for projection in vectorPictureSet:
-            shape = Utils.getLongestVertex(projection[0])
+            shape = Utils.getLongestLine(projection[0])
             angle = projection[1]
             # kierunek wektorow dla features odwrocony zeby zaznaczyc pusty obszar
             features = [feature for feature in projection[0] if feature != shape]
