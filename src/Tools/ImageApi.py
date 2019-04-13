@@ -1,4 +1,4 @@
-import Image, ImageTk
+from PIL import Image, ImageTk
 import cv2
 import numpy
 from VideoCapture import Device
@@ -23,14 +23,15 @@ MAGENTA = "MAGENTA"
 
 # HSV (Hue, Saturation, Value)
 COLOR_BOUNDARY = {
-     "RED"        : [[[0, 150, 80], [12, 255, 255]], [[168, 150, 80], [180, 255, 255]]]
-    ,"BLUE"       : [[[90, 80, 150], [130, 255, 255]]]
-    ,"YELLOW"     : [[[0, 0, 150], [180, 50, 255]], [[20, 50, 150], [40, 255, 255]]]
+     "RED"        : [[[0, 150, 80], [18, 255, 255]], [[162, 150, 80], [180, 255, 255]]]
+    #,"BLUE"       : [[[90, 80, 150], [130, 255, 255]]]
+    #,"YELLOW"     : [[[0, 0, 150], [180, 50, 255]], [[20, 50, 150], [40, 255, 255]]]
     #,"YELLOW"     : [[[15, 50, 150], [45, 255, 255]]]
     #,"MAGENTA"    : [[[100, 0, 100], [230, 80, 230]]]
+    #"YELLOW"     : [[[20, 50, 80], [40, 255, 255]]]
 }
 
-MEDIAN_BLUR = 9
+MEDIAN_BLUR = 1
 
 
 class Filter(object):
@@ -151,20 +152,20 @@ class Filter(object):
     # Image pre-processing 
     #
     def imagePreprocess(self, inputImage):    
-        image = inputImage            
+        image = inputImage
         #image = cv2.bilateralFilter(inputImage, 11, 90, 90)
         
         #Median Blur
         image = cv2.medianBlur(image, MEDIAN_BLUR)
         
         #Gamma Enhancing  
-        gamma = 0.5
+        gamma = 1.0
         invGamma = 1.0 / gamma
         table = numpy.array([((i / 255.0) ** invGamma) * 255
                              for i in numpy.arange(0, 256)]).astype("uint8") 
         image = cv2.LUT(image, table)
         
-        #image = cv2.GaussianBlur()                
+        #image = cv2.GaussianBlur(image, (5, 5), 5)
         return image
 
 
@@ -224,7 +225,9 @@ class Filter(object):
                             fullMask = fullMask + mask
                     image = fullMask
                     break
-        self.showImage(image, "before edging")           
+        if self.debugLevel > 1:
+            self.showImage(image, "before edging")
+        image = cv2.erode(image, numpy.ones((3,3),numpy.uint8),iterations=1)
         image = cv2.Canny(image, 100, 150, 11)        
         return image
     

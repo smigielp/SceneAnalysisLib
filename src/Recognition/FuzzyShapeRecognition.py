@@ -87,7 +87,7 @@ def getObjectBorderSpectrum(vectorObject, angleStep=ANGLE_STEP):
 # Function checks if two representations given in distances from centroid to walls
 # describe similar shapes
 # patterns are results of getObjectBorderSpectrum function
-def comparePatterns(pattern1, pattern2, angleStep=ANGLE_STEP): 
+def comparePatterns(pattern1, pattern2, angleStep=ANGLE_STEP, debugLevel=1):
     if len(pattern1) != len(pattern2):
         print "Error: inconsistent patterns - different ray count"
         return None
@@ -95,6 +95,10 @@ def comparePatterns(pattern1, pattern2, angleStep=ANGLE_STEP):
     print "=================="
     print pattern1
     print pattern2
+    if debugLevel >= 2:
+        GnuplotDrawer.printPolygonCentroidSpectrum(pattern1)
+        GnuplotDrawer.printPolygonCentroidSpectrum(pattern2)
+    standardDeviations = []
     for i in range(len(pattern1) / 2):
         rayProportions = []
         for j in range(len(pattern2)):
@@ -112,13 +116,17 @@ def comparePatterns(pattern1, pattern2, angleStep=ANGLE_STEP):
             standardDev += (rayProportions[j] - meanProportion) ** 2
         standardDev = math.sqrt(standardDev / len(rayProportions))      
         # sprawdzenie czy roznice miedzy proporcjami dlugosci scian
-        # porownywanych bryl sa dostatecznie male 
-        if standardDev < meanProportion * 0.15:  
-            # print dirChange1
-            # print dirChange2
-            #return {'scale': rayProportions[0], 'rotate': (pattern1[i][0] - pattern2[0][0]) * angleStep}
-            return {'scale': rayProportions[0], 'rotate': (pattern1[i][0] - pattern2[0][0])}   
-    return None
+        # porownywanych bryl sa dostatecznie male
+        if standardDev < meanProportion * 0.15:
+            standardDeviations.append([standardDev, {'scale': meanProportion, 'rotate': (pattern1[i][0] - pattern2[0][0])}])
+            #standardDeviations.append([standardDev, {'scale': rayProportions[0], 'rotate': (pattern1[i][0] - pattern2[0][0])}])
+    if len(standardDeviations) == 0:
+        return None
+    else:
+        print "Deviations:", standardDeviations
+        standardDeviations.sort(key=lambda x: x[0])
+        print "Deviations:", standardDeviations
+        return standardDeviations[0][1]
     
     
 def findSinglePattern(vectorObject, vectorObjectList):

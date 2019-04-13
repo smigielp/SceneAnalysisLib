@@ -55,37 +55,47 @@ class ProjectionSet(object):
         frontHeight = frontMaxY - frontMinY
         topWidth = topMaxX - topMinX     
          
-        scaleRight = topHeight / rightWidth
-        scaleFront = topWidth / frontWidth    
+        scaleRight = 1.0 * topHeight / rightWidth
+        scaleFront = 1.0 * topWidth / frontWidth
         
         # normalizacja rzutow by odpowiadaly sobie skala i polozeniem q    
         for pt in self.front:
-            pt[0] = (pt[0] - frontMinX) * scaleFront + topMinX 
-                        
+            pt[0] = (pt[0] - frontMinX) * scaleFront + topMinX
+        for feature in self.frontFeatures:
+            for pt in feature:
+                pt[0] = (pt[0] - frontMinX) * scaleFront + topMinX
+
         for pt in self.right:
             pt[0] = (pt[0] - rightMinX) * scaleRight + topMinY  
-            pt[1] = (pt[1] - rightMinY) * scaleRight + frontMinY 
+            pt[1] = (pt[1] - rightMinY) * scaleRight + frontMinY
+        for feature in self.rightFeatures:
+            for pt in feature:
+                pt[0] = (pt[0] - rightMinX) * scaleRight + topMinY
+                pt[1] = (pt[1] - rightMinY) * scaleRight + frontMinY
             
         # skalowanie wysokosci frontu wzgledem wysokosci przeskalowanego prawego rzutu
         rightMinY = utl.getMinPoint(self.right, 1)[1]
         rightMaxY = utl.getMaxPoint(self.right, 1)[1]
         rightHeight = rightMaxY - rightMinY
-        scaleFront2 = rightHeight / frontHeight    
+        scaleFront2 = 1.0 * rightHeight / frontHeight
         for pt in self.front:
-            pt[1] = (pt[1] - frontMinY) * scaleFront2 + rightMinY 
-     
-     
-        frontMin = utl.getMinPoint(self.front, 0)
-        frontMax = utl.getMaxPoint(self.front, 0)
-        rightMin = utl.getMinPoint(self.right, 0)
-        rightMax = utl.getMaxPoint(self.right, 0)
-        domainX = [frontMin[0]-20, frontMax[0]+20]
-        domainZ = [frontMin[1]-20, frontMax[1]+20]
-        domainY = [rightMin[0]-20, rightMax[0]+20]
+            pt[1] = (pt[1] - frontMinY) * scaleFront2 + rightMinY
+        for feature in self.frontFeatures:
+            for pt in feature:
+                pt[1] = (pt[1] - frontMinY) * scaleFront2 + rightMinY
+
+        frontMinX = utl.getMinPoint(self.front, 0)
+        frontMaxX = utl.getMaxPoint(self.front, 0)
+        frontMinZ = utl.getMinPoint(self.front, 1)
+        frontMaxZ = utl.getMaxPoint(self.front, 1)
+        rightMinX = utl.getMinPoint(self.right, 0)
+        rightMaxX = utl.getMaxPoint(self.right, 0)
+        domainMin = round(min(frontMinX[0], frontMinZ[0], rightMinX[0])) - 20
+        domainMax = round(max(frontMaxX[1], frontMaxZ[1], rightMaxX[1])) + 20
         
-        domain = [domainX, domainY, domainZ]
-        print domain
-        
+        domain = [[domainMin, domainMax]] * 3
+        print "Domain of 3D picture: ", domain
+        print "Domain of 3D picture: ", domain
         return domain
         
              
@@ -166,9 +176,9 @@ class WallStructure(object):
 #
 class ShapeStructure(object):
     
-    def __init__(self, wallStructures=[], domain3D=[]):
+    def __init__(self, wallStructures=[], domain=[]):
         self.wallStructures = wallStructures
-        self.domain = domain3D
+        self.domain = domain
         
         
     def addWall(self, projection2D, walls3D, angleToFront, features3D):
@@ -183,6 +193,7 @@ class ShapeStructure(object):
                 vectors3D.extend(wallStruct.walls)
         else:
             vectors3D.extend(self.wallStructures[projectionId].walls)
+        print "3D model (no features):", vectors3D
         if mode == Utils.ARROW_MODE:
             GnuplotDrawer.printArrowPicture(vectors3D, self.domain)
         elif mode == Utils.VECTOR_MODE:
@@ -199,6 +210,7 @@ class ShapeStructure(object):
                     vectors3D.extend(feature.sideWalls)
         else:
             vectors3D.extend(self.wallStructures[featureId].features)
+        print "3D model (only features):", vectors3D
         if mode == Utils.ARROW_MODE:
             GnuplotDrawer.printArrowPicture(vectors3D, self.domain)
         elif mode == Utils.VECTOR_MODE:
@@ -213,7 +225,7 @@ class ShapeStructure(object):
             vectors3D.extend(wallStruct.walls)
             for feature in wallStruct.features:
                 vectors3D.extend(feature.sideWalls)
-        print vectors3D
+        print "3D model (complete):", vectors3D
         if mode == Utils.ARROW_MODE:
             GnuplotDrawer.printArrowPicture(vectors3D, self.domain)
         elif mode == Utils.VECTOR_MODE:
@@ -229,7 +241,45 @@ class ShapeStructure(object):
             for feature in wallStruct.features:
                 vectors3D.extend(feature.sideWalls)
         return vectors3D
-    
+
+    def getWallsVectors(self):
+        vectors3D = []
+        for wallStruct in self.wallStructures:
+            vectors3D.extend(wallStruct.walls)
+        return vectors3D
+
+    def moveModelByVector3D(self, vector_start, vector_end):
+        move_x = vector_end[0] - vector_start[0]
+        move_y = vector_end[1] - vector_start[1]
+        move_z = vector_end[2] - vector_start[2]
+        for wall_struct in self.wallStructures:
+            for idx, wall in enumerate(wall_struct.walls):
+                moved_wall = Utils.movePolygon(wall, move_x, move_y, move_z)
+                wall_struct.walls[idx] = moved_wall
+            for feature in wall_struct.features:
+                for idx, wall in enumerate(feature.sideWalls):
+                    moved_wall = Utils.movePolygon(wall, move_x, move_y, move_z)
+                    feature.sideWalls[idx]= moved_wall
+
+    def scaleModel(self, scale):
+        for wall_struct in self.wallStructures:
+            for idx, wall in enumerate(wall_struct.walls):
+                rotated_wall = Utils.scalePolygon(wall, scale)
+                wall_struct.walls[idx] = rotated_wall
+            for feature in wall_struct.features:
+                for idx, wall in enumerate(feature.sideWalls):
+                    rotated_wall = Utils.scalePolygon(wall, scale)
+                    feature.sideWalls[idx]= rotated_wall
+
+    def rotateHorizontally(self, center_point, angle):
+        for wall_struct in self.wallStructures:
+            for idx, wall in enumerate(wall_struct.walls):
+                rotated_wall = Utils.rotatePolygonByCenterPoint(wall, center_point, angle)
+                wall_struct.walls[idx] = rotated_wall
+            for feature in wall_struct.features:
+                for idx, wall in enumerate(feature.sideWalls):
+                    rotated_wall = Utils.rotatePolygonByCenterPoint(wall, center_point, angle)
+                    feature.sideWalls[idx]= rotated_wall
     
 
 
@@ -267,8 +317,9 @@ class GraphStructure(object):
                 if nbr != obj:
                     if Utils.getPointToPolygonDist(center, nbr) < Utils.getPointToPolygonFarDist(center, closest):
                         neighbourList.append([nbr, Utils.getCentroid(nbr), idx])
-            
-            self.objectGraph.append([[obj, center], neighbourList])  
+
+            # [[object, centroid, 3DModel], neighbourList]
+            self.objectGraph.append([[obj, center, None], neighbourList])
             
         if graphLevel == 2:
             tmpObjectGraph = []
@@ -280,12 +331,32 @@ class GraphStructure(object):
                     tmpObj[1].extend([tmpNbr for tmpNbr in self.objectGraph[nbr[2]][1] if tmpNbr[2] != idx ])
                 tmpObjectGraph.append(tmpObj)
             self.objectGraph = tmpObjectGraph
-                        
-    
-    
+
+    # Adds 3-D representation of the object stored under idx index
+    # Turns rest of graph into flat 3-D model
+    def add3DModel(self, model3D,
+                   model_location,
+                   graph_object_location,
+                   graph_to_model_scale,
+                   graph_objec_rotation,
+                   graph_object_idx):
+        model3D.moveModelByVector3D(model_location, [0, 0, 0])          # move to center of coordinate system
+        model3D.scaleModel(graph_to_model_scale)                        # scale model to size of the object in graph
+        model3D.rotateHorizontally([0, 0, 0], graph_objec_rotation)     # rotate to reflect alignment of object in graph
+        model3D.moveModelByVector3D([0, 0, 0], graph_object_location)   # move to position of object in graph
+        self.objectGraph[graph_object_idx][0][2] = model3D
+        #print self.objectGraph
+        for element in self.objectGraph:
+            for edge in element[0][0]:
+                edge.append(0)         # actual object
+            element[0][1] = (element[0][1][0], element[0][1][1], 0)    # actual object centroid
+
     def getGraphElement(self, idx):
         return self.objectGraph[idx]
-    
+
+    def getGraphElementShape(self, idx):
+        return self.objectGraph[idx][0][0]
+
     def getGraph(self):
         return self.objectGraph
 

@@ -93,7 +93,7 @@ class ImageProcessor(object):
         smoothVectors = self.vectorizer.makeSmooth(borderPoints, self.outlierDistance)
         
         if self.debugLevel >= 3: 
-            GnuplotDrawer.printArrowPicture(smoothVectors, self.domain)
+            GnuplotDrawer.printVectorPicture(smoothVectors, self.domain)
                             
         # Check what precise colors are associated with vectorized objects
         # Returning only those polygons which have an identified color
@@ -117,8 +117,8 @@ class ImageProcessor(object):
     #                      ]  
     # angle = None (top), 0 (front), 0.5 (right)
     def create3DStructureFromVectors(self, vectorizedImageSet):
-        self.mounter.domain3D = self.domain3D
         #self.mounter.domain3D = [[200,700],[100,550],[150,400]]
+        self.mounter.domain3D = self.domain3D
         self.mounter.domain2D = self.domain        
         projectionSet = self.extractMainObjects(vectorizedImageSet)         
         # wyswietlenie wszystkich rzutow       
@@ -126,7 +126,7 @@ class ImageProcessor(object):
             GnuplotDrawer.printVectorPicture([projectionSet.top] + projectionSet.topFeatures, self.domain)
             for proj in projectionSet.wallsProjections:
                 GnuplotDrawer.printVectorPicture([proj[0]] + proj[1], self.domain)   
-        shapeStructure = self.mounter.create3DStructure(projectionSet)
+        shapeStructure = self.mounter.create3DStructure(projectionSet, self.debugLevel)
         return shapeStructure
         
                     
@@ -154,4 +154,4 @@ class ImageProcessor(object):
                                       wallsProjectionsList=vectorProjectionList
                                       )
         return projectionSet
-                 
+

@@ -26,19 +26,22 @@ class ModelBuilder3D:
             point[coord] = maxCoordValue - point[coord]
             
     
-    def create3DStructure(self, projectionSet):        
+    def create3DStructure(self, projectionSet, debugLevel=0):
         transformedDomain = projectionSet.standardiseMainProjections()
         top = projectionSet.top
         front = projectionSet.front
         right = projectionSet.right
         
         print '------------------------'
+        print "Transformed domain: ", transformedDomain
         print right
         print top
-        GnuplotDrawer.printArrowPicture([top], [[0, 400], [0, 400]])
+        print front
 
-        GnuplotDrawer.printArrowPicture([front], [[0, 400], [0, 400]])
-        GnuplotDrawer.printArrowPicture([right], [[0, 400], [0, 400]])
+        if debugLevel > 0:
+            GnuplotDrawer.printArrowPicture([top], [[0, 400], [0, 400]])
+            GnuplotDrawer.printArrowPicture([front], [[0, 400], [0, 400]])
+            GnuplotDrawer.printArrowPicture([right], [[0, 400], [0, 400]])
                 
         x = self.x
         y = self.y
@@ -438,4 +441,4 @@ def sweepFeature(feature, x, y, coordDepth, backDepth=-1, frontDepth=0):
     fullFeature = Feature(featureXY, sweepWalls)
     return fullFeature
         
-                    
+

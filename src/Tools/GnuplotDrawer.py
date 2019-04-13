@@ -145,9 +145,10 @@ def printArrowPicture(mapToPrint, domain=None):
 ###################################################################
 # objectsToMark: { idx1: [neighborIdx1, neighborIdx2], 
 #                  idx2: [neighborIdx1] }
-def printObjectGraph(graph, objectsToMark=None):
+def printObjectGraph(graph, objectsToMark=None, print3DModels=False):
     graphToPrint = graph.getGraph()
     domain = graph.getDomain()
+    #domain = [[50, 550], [150, 520], [-50, 500]]
     
     gp = Gnuplot.Gnuplot(persist=0) 
                       
@@ -170,13 +171,18 @@ def printObjectGraph(graph, objectsToMark=None):
             plots.append(Gnuplot.PlotItems.Data(eobject[0][0], with_='lines'))
             for reference in eobject[1]:
                 gp('set arrow from %s,%s to %s,%s' % (eobject[0][1][0], eobject[0][1][1], reference[1][0], reference[1][1]))
+        if print3DModels and eobject[0][2] is not None:
+            # eobject[0][2] <- obeject of type: ShapeStructure
+            for wall in eobject[0][2].getWallsVectors():
+                plots.append(Gnuplot.PlotItems.Data(wall, with_='lines'))
     
     if len(domain) > 2:
         gp('set ztics 100')
         gp('set zrange [' + str(domain[2][0] - 1) + ':' + str(domain[2][1] + 1) + ']')
+        #plots = [Gnuplot.PlotItems.Data([0, 0, 0], with_='lines')]
         gp.splot(*plots)
     else:
-        gp.plot(*plots)   
+        gp.plot(*plots)
     gnuPlots.append(gp)
     
 
@@ -214,7 +220,7 @@ def printObjectGraphElement(graphElement, domain=None, markedObjectsIdx=None):
         gp('set zrange [' + str(domain[2][0] - 1) + ':' + str(domain[2][1] + 1) + ']')
         gp.splot(*plots)
     else:
-        gp.plot(*plots)   
+        gp.plot(*plots)
     gnuPlots.append(gp)
     
 

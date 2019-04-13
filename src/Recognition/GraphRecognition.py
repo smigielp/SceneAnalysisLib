@@ -29,7 +29,7 @@ def fuzzyCompareObjects(vertex1, vertex2, distThreshold):
 # parametry:
 #    lookupObjectIn - szukany obiekt wraz z ewentualnymi sasiadami
 #    lookupGraphIn  - graf przechowujacy obiekty sceny
-def findPatternInGraph(lookupObjectIn, lookupGraphIn):    
+def findPatternInGraph(lookupObjectIn, lookupGraphIn, debugLevel=1):
     # lookupObject: 
     # [[object, center], [[neighbour1, center1], [neighbour2, center2]]]
     # lookupGraph:
@@ -45,7 +45,7 @@ def findPatternInGraph(lookupObjectIn, lookupGraphIn):
     searchResults = []
     for lkpIdx, graphObject in enumerate(lookupGraph):
         graphObjPattern = FuzzyShapeRecognition.getObjectBorderSpectrum(graphObject[0][0])  
-        diffParams = FuzzyShapeRecognition.comparePatterns(lookupPattern, graphObjPattern) 
+        diffParams = FuzzyShapeRecognition.comparePatterns(lookupPattern, graphObjPattern, debugLevel)
         if diffParams is not None :  
             # znalezione dopasowanie wyszukiwanego elementu     
             # konstruujemy strukture do przechowywania dopasowanych obiektow

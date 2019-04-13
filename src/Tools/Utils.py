@@ -463,7 +463,7 @@ def getCenterPoint(polygon):
         centerX += pt[0]
         centerY += pt[1]
     return [centerX / len(polygon), centerY / len(polygon)]
-    
+
 
 def getPolygonCrossing2(v1, v2, x, y, z, threshold=0):
     intersect = []
